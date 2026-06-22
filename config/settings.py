@@ -22,7 +22,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     # Aplikasi (modul) kita:
     "core",
-    # Nanti: "warehouse",
+    "warehouse",
 ]
 
 MIDDLEWARE = [
