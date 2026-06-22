@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 
 
@@ -51,8 +52,8 @@ class Item(models.Model):
     unit = models.CharField(
         "Satuan", max_length=10, choices=Unit.choices, default=Unit.PCS
     )
-    # current_stock = angka cache. Untuk sekarang bisa diisi sebagai stok awal;
-    # pada Tahap 4 angka ini akan berubah otomatis lewat transaksi masuk/keluar.
+    # current_stock = angka cache. Mulai Tahap 4 hanya berubah lewat StockMovement,
+    # tidak diketik manual lagi (di admin dibuat read-only).
     current_stock = models.PositiveIntegerField("Stok Saat Ini", default=0)
     min_stock = models.PositiveIntegerField("Stok Minimum", default=0)
     created_at = models.DateTimeField("Dibuat", auto_now_add=True)
@@ -70,3 +71,54 @@ class Item(models.Model):
     def is_low_stock(self) -> bool:
         """True bila stok sudah di bawah atau sama dengan batas minimum."""
         return self.current_stock <= self.min_stock
+
+
+class StockMovement(models.Model):
+    """
+    Catatan pergerakan stok = sumber kebenaran (ledger).
+    Sekali dibuat TIDAK diubah/dihapus, supaya Stok Saat Ini selalu konsisten.
+    """
+
+    class Type(models.TextChoices):
+        IN = "in", "Masuk"
+        OUT = "out", "Keluar"
+        ADJUSTMENT = "adjustment", "Penyesuaian"
+
+    item = models.ForeignKey(
+        Item,
+        on_delete=models.PROTECT,   # barang dengan riwayat tidak boleh dihapus
+        related_name="movements",
+        verbose_name="Barang",
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="stock_movements",
+        verbose_name="Pencatat",
+    )
+    supplier = models.ForeignKey(
+        Supplier,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="movements",
+        verbose_name="Supplier",
+    )
+    type = models.CharField("Jenis", max_length=12, choices=Type.choices)
+    quantity = models.PositiveIntegerField(
+        "Jumlah",
+        help_text="Untuk Masuk/Keluar: jumlah yang bergerak. "
+                  "Untuk Penyesuaian: jumlah stok yang sebenarnya (hasil hitung fisik).",
+    )
+    note = models.CharField("Catatan", max_length=255, blank=True)
+    reference = models.CharField("No. Referensi", max_length=100, blank=True)
+    created_at = models.DateTimeField("Waktu", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Transaksi Stok"
+        verbose_name_plural = "Transaksi Stok"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.get_type_display()} {self.quantity} × {self.item.name}"

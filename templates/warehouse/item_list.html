@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Gudang — Daftar Stok{% endblock %}
+{% block body %}
+<div class="flex items-center justify-between mb-5">
+    <h1 class="text-2xl font-semibold text-brand-ink">Daftar stok</h1>
+    <a href="/admin/warehouse/stockmovement/add/" class="bg-brand text-white text-sm rounded-xl px-4 py-2 font-medium hover:bg-brand-dark transition">+ Catat transaksi</a>
+</div>
+
+<form method="get" class="flex flex-wrap gap-2 mb-5 text-sm">
+    <input type="text" name="q" value="{{ q }}" placeholder="Cari nama atau SKU..."
+           class="bg-white rounded-xl px-4 py-2 w-64 shadow-soft outline-none focus:ring-2 focus:ring-brand/30">
+    <button type="submit" class="bg-white rounded-xl px-4 py-2 shadow-soft hover:bg-brand-soft transition">Cari</button>
+    <a href="?low=1" class="rounded-xl px-4 py-2 shadow-soft transition {% if only_low %}bg-brand text-white{% else %}bg-white hover:bg-brand-soft{% endif %}">Stok menipis</a>
+    {% if q or only_low %}<a href="{% url 'warehouse:item_list' %}" class="px-3 py-2 text-brand-muted hover:text-brand-dark">Reset</a>{% endif %}
+</form>
+
+<div class="bg-white rounded-2xl shadow-soft overflow-hidden">
+    <table class="w-full text-sm">
+        <thead>
+            <tr class="text-brand-muted text-left border-b border-slate-100">
+                <th class="px-5 py-3 font-medium">SKU</th>
+                <th class="px-5 py-3 font-medium">Nama</th>
+                <th class="px-5 py-3 font-medium">Kategori</th>
+                <th class="px-5 py-3 font-medium text-right">Stok</th>
+                <th class="px-5 py-3 font-medium text-right">Min</th>
+                <th class="px-5 py-3 font-medium">Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr class="border-b border-slate-50 hover:bg-brand-soft/60 transition">
+                <td class="px-5 py-3 text-brand-muted">{{ item.sku }}</td>
+                <td class="px-5 py-3 text-slate-700">{{ item.name }}</td>
+                <td class="px-5 py-3 text-brand-muted">{{ item.category|default:"-" }}</td>
+                <td class="px-5 py-3 text-right {% if item.is_low_stock %}text-red-500 font-medium{% else %}text-slate-700{% endif %}">{{ item.current_stock }}</td>
+                <td class="px-5 py-3 text-right text-brand-muted">{{ item.min_stock }}</td>
+                <td class="px-5 py-3">
+                    {% if item.is_low_stock %}
+                    <span class="bg-red-50 text-red-600 text-xs px-3 py-1 rounded-full">Menipis</span>
+                    {% else %}
+                    <span class="bg-emerald-50 text-emerald-700 text-xs px-3 py-1 rounded-full">Aman</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" class="px-5 py-8 text-center text-brand-muted">Belum ada barang.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

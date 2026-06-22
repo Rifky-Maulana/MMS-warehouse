@@ -1,22 +1,59 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}Gudang MMS{% endblock %}</title>
-    <style>
-        body { font-family: system-ui, -apple-system, sans-serif; margin: 0; background: #f5f5f4; color: #1c1917; }
-        header { background: #fff; border-bottom: 1px solid #e7e5e4; padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; }
-        main { max-width: 960px; margin: 0 auto; padding: 1.5rem; }
-        .card { background: #fff; border: 1px solid #e7e5e4; border-radius: 10px; padding: 1.25rem; margin-bottom: 1rem; }
-        h1, h2 { margin-top: 0; }
-        a { color: #1d4ed8; }
-        button { background: #1d4ed8; color: #fff; border: none; border-radius: 6px; padding: .5rem 1rem; cursor: pointer; font-size: 1rem; }
-        input { width: 100%; padding: .5rem; border: 1px solid #d6d3d1; border-radius: 6px; box-sizing: border-box; }
-        label { display: block; margin-bottom: .75rem; }
-    </style>
+    <script src="https://cdn.tailwindcss.com"></script>
+    {% verbatim %}
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            DEFAULT: '#07A4B6',
+                            dark: '#06869A',
+                            darker: '#055E6B',
+                            tint: '#D6F1F4',
+                            soft: '#F1FAFB',
+                            ink: '#0F3A41',
+                            muted: '#7A969B'
+                        }
+                    },
+                    boxShadow: {
+                        soft: '0 1px 2px rgba(16,58,65,0.04), 0 6px 20px rgba(16,58,65,0.06)'
+                    }
+                }
+            }
+        };
+    </script>
+    {% endverbatim %}
 </head>
-<body>
-{% block body %}{% endblock %}
+<body class="bg-brand-soft text-slate-700 min-h-screen">
+{% if request.user.is_authenticated %}
+<header class="bg-white shadow-soft">
+    <div class="max-w-5xl mx-auto px-6 py-3 flex items-center justify-between">
+        <div class="font-semibold text-lg text-brand">Gudang MMS</div>
+        <div class="flex items-center gap-3 text-sm">
+            <span class="text-brand-muted">{{ request.user.get_full_name|default:request.user.username }}</span>
+            <form method="post" action="{% url 'logout' %}">{% csrf_token %}
+                <button class="text-brand hover:text-brand-dark">Keluar</button>
+            </form>
+        </div>
+    </div>
+    <nav class="max-w-5xl mx-auto px-6 flex gap-1 text-sm">
+        {% url 'dashboard' as u_dash %}
+        {% url 'warehouse:item_list' as u_gudang %}
+        <a href="{{ u_dash }}" class="px-3 py-2 {% if request.path == u_dash %}font-medium text-brand border-b-2 border-brand{% else %}text-brand-muted hover:text-brand-dark{% endif %}">Dashboard</a>
+        <a href="{{ u_gudang }}" class="px-3 py-2 {% if request.path == u_gudang %}font-medium text-brand border-b-2 border-brand{% else %}text-brand-muted hover:text-brand-dark{% endif %}">Gudang</a>
+        <a href="/admin/warehouse/stockmovement/add/" class="px-3 py-2 text-brand-muted hover:text-brand-dark">Catat Transaksi</a>
+    </nav>
+</header>
+{% endif %}
+<main class="max-w-5xl mx-auto px-6 py-8">
+    {% block body %}{% endblock %}
+</main>
 </body>
 </html>
