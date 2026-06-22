@@ -1,0 +1,5 @@
+# Django 5.2 = versi LTS, didukung (perbaikan keamanan) sampai April 2028.
+# Dipasang otomatis di dalam Docker — kamu tidak perlu memasangnya sendiri.
+Django==5.2.*
+psycopg[binary]>=3.2      # penghubung ke PostgreSQL
+gunicorn>=22.0            # server untuk produksi nanti

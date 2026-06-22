@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Gudang MMS{% endblock %}
+{% block body %}
+<header>
+    <strong>Gudang MMS</strong>
+    <span>
+        {{ request.user.get_full_name|default:request.user.username }}
+        &middot;
+        <form method="post" action="{% url 'logout' %}" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" style="background:none;color:#1d4ed8;padding:0;font-size:1rem;">Keluar</button>
+        </form>
+    </span>
+</header>
+<main>
+    <div class="card">
+        <h1>Dashboard</h1>
+        <p>Selamat datang, <strong>{{ request.user.get_full_name|default:request.user.username }}</strong>.</p>
+        <p style="color:#78716c;">Divisi: {{ request.user.division|default:"-" }}</p>
+    </div>
+
+    <div class="card">
+        <h2>Stok Menipis</h2>
+        {% if low_stock_items %}
+            <ul>{% for item in low_stock_items %}<li>{{ item.name }}</li>{% endfor %}</ul>
+        {% else %}
+            <p style="color:#78716c;">Belum ada data. Akan tampil setelah modul gudang aktif.</p>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <h2>Transaksi Terbaru</h2>
+        {% if recent_transactions %}
+            <ul>{% for trx in recent_transactions %}<li>{{ trx }}</li>{% endfor %}</ul>
+        {% else %}
+            <p style="color:#78716c;">Belum ada data. Akan tampil setelah modul gudang aktif.</p>
+        {% endif %}
+    </div>
+</main>
+{% endblock %}

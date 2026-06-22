@@ -1,0 +1,35 @@
+# Docker Compose — dua layanan: web (Django) + db (PostgreSQL).
+# Nilai-nilai diambil otomatis dari file .env.
+
+services:
+  web:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      # Kode di komputermu langsung tercermin di dalam container (mode pengembangan).
+      - .:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # Database tidak diekspos ke luar — hanya bisa diakses container web.
+
+volumes:
+  db-data:   # penyimpanan permanen data PostgreSQL
