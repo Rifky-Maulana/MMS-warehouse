@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Analitik — Gudang MMS{% endblock %}
+{% block body %}
+<h1 class="text-2xl font-semibold text-brand-ink mb-5">Analitik</h1>
+
+<form method="get" class="flex flex-wrap items-end gap-3 mb-6 text-sm">
+    <div>
+        <label class="block text-brand-muted mb-1">Dari</label>
+        <input type="date" name="from" value="{{ date_from|date:'Y-m-d' }}" class="bg-white rounded-xl px-3 py-2 shadow-soft outline-none focus:ring-2 focus:ring-brand/30">
+    </div>
+    <div>
+        <label class="block text-brand-muted mb-1">Sampai</label>
+        <input type="date" name="to" value="{{ date_to|date:'Y-m-d' }}" class="bg-white rounded-xl px-3 py-2 shadow-soft outline-none focus:ring-2 focus:ring-brand/30">
+    </div>
+    <button class="bg-brand text-white rounded-xl px-4 py-2 font-medium hover:bg-brand-dark transition">Terapkan</button>
+</form>
+
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+    <div class="bg-white rounded-2xl shadow-soft p-5">
+        <div class="text-sm text-brand-muted">Total barang masuk</div>
+        <div class="text-3xl font-semibold text-emerald-600 mt-1">{{ total_in }}</div>
+    </div>
+    <div class="bg-white rounded-2xl shadow-soft p-5">
+        <div class="text-sm text-brand-muted">Total barang keluar</div>
+        <div class="text-3xl font-semibold text-red-500 mt-1">{{ total_out }}</div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+    <div class="bg-white rounded-2xl shadow-soft p-5">
+        <h2 class="font-medium text-brand-ink mb-3">Paling banyak keluar</h2>
+        <canvas id="chartOut" height="220"></canvas>
+    </div>
+    <div class="bg-white rounded-2xl shadow-soft p-5">
+        <h2 class="font-medium text-brand-ink mb-3">Paling banyak masuk</h2>
+        <canvas id="chartIn" height="220"></canvas>
+    </div>
+</div>
+
+{{ chart_data|json_script:"chart-data" }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script>
+    const d = JSON.parse(document.getElementById('chart-data').textContent);
+    function bar(id, labels, values, color) {
+        if (!labels.length) {
+            document.getElementById(id).insertAdjacentHTML('afterend',
+                '<p style="color:#7A969B;font-size:13px">Belum ada data pada rentang ini.</p>');
+            return;
+        }
+        new Chart(document.getElementById(id), {
+            type: 'bar',
+            data: { labels: labels, datasets: [{ data: values, backgroundColor: color, borderRadius: 6 }] },
+            options: {
+                indexAxis: 'y',
+                plugins: { legend: { display: false } },
+                scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }
+            }
+        });
+    }
+    bar('chartOut', d.keluar.labels, d.keluar.values, '#E5484D');
+    bar('chartIn', d.masuk.labels, d.masuk.values, '#07A4B6');
+</script>
+{% endblock %}
