@@ -3,40 +3,38 @@
 {% block body %}
 <h1 class="text-2xl font-semibold text-brand-ink mb-5">Analitik</h1>
 
-<form method="get" class="bg-white rounded-2xl shadow-soft p-4 mb-6 flex flex-wrap items-end gap-3 text-sm">
-    <div>
-        <label class="block text-brand-muted mb-1">Dari</label>
-        <input type="date" name="from" value="{{ date_from|date:'Y-m-d' }}" class="bg-brand-soft rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-brand/30">
+<form method="get" class="bg-white rounded-2xl shadow-soft p-4 mb-6 space-y-3 text-sm">
+    <div class="flex flex-wrap items-end gap-3">
+        <div>
+            <label class="block text-brand-muted mb-1">Dari</label>
+            <input type="date" name="from" value="{{ date_from|date:'Y-m-d' }}" class="bg-brand-soft rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-brand/30">
+        </div>
+        <div>
+            <label class="block text-brand-muted mb-1">Sampai</label>
+            <input type="date" name="to" value="{{ date_to|date:'Y-m-d' }}" class="bg-brand-soft rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-brand/30">
+        </div>
+        <div>
+            <label class="block text-brand-muted mb-1">Kategori</label>
+            <select name="kategori" class="bg-brand-soft rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-brand/30">
+                <option value="">Semua</option>
+                {% for c in categories %}<option value="{{ c.id }}" {% if sel_cat == c.id|stringformat:'s' %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="block text-brand-muted mb-1">Pencatat</label>
+            <select name="pencatat" class="bg-brand-soft rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-brand/30">
+                <option value="">Semua</option>
+                {% for u in pencatat_list %}<option value="{{ u.id }}" {% if sel_user == u.id|stringformat:'s' %}selected{% endif %}>{{ u.get_full_name|default:u.username }}</option>{% endfor %}
+            </select>
+        </div>
     </div>
-    <div>
-        <label class="block text-brand-muted mb-1">Sampai</label>
-        <input type="date" name="to" value="{{ date_to|date:'Y-m-d' }}" class="bg-brand-soft rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-brand/30">
-    </div>
-    <div>
-        <label class="block text-brand-muted mb-1">Kategori</label>
-        <select name="kategori" class="bg-brand-soft rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-brand/30">
-            <option value="">Semua</option>
-            {% for c in categories %}<option value="{{ c.id }}" {% if sel_cat == c.id|stringformat:'s' %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
-        </select>
-    </div>
-    <div>
-        <label class="block text-brand-muted mb-1">Pencatat</label>
-        <select name="pencatat" class="bg-brand-soft rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-brand/30">
-            <option value="">Semua</option>
-            {% for u in pencatat_list %}<option value="{{ u.id }}" {% if sel_user == u.id|stringformat:'s' %}selected{% endif %}>{{ u.get_full_name|default:u.username }}</option>{% endfor %}
-        </select>
-    </div>
-    {% if locations is not None %}
-    <div>
-        <label class="block text-brand-muted mb-1">Lokasi</label>
-        <select name="lokasi" class="bg-brand-soft rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-brand/30">
-            <option value="">Semua</option>
-            {% for l in locations %}<option value="{{ l.id }}" {% if sel_loc == l.id|stringformat:'s' %}selected{% endif %}>{{ l.name }}</option>{% endfor %}
-        </select>
-    </div>
+    {% if loc_options.count > 1 %}
+    {% include "partials/_checkbox_filter.html" with label="Lokasi" name="lokasi" options=loc_options selected=sel_locs %}
     {% endif %}
-    <button class="bg-brand text-white rounded-xl px-4 py-2 font-medium hover:bg-brand-dark transition">Terapkan</button>
-    <a href="{% url 'warehouse:analytics' %}" class="px-3 py-2 text-brand-muted hover:text-brand-dark">Reset</a>
+    <div class="flex gap-2 pt-1">
+        <button class="bg-brand text-white rounded-xl px-4 py-2 font-medium hover:bg-brand-dark transition">Terapkan</button>
+        <a href="{% url 'warehouse:analytics' %}" class="px-3 py-2 text-brand-muted hover:text-brand-dark">Reset</a>
+    </div>
 </form>
 
 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
@@ -72,7 +70,7 @@
     const d = JSON.parse(document.getElementById('chart-data').textContent);
     function empty(id) {
         document.getElementById(id).insertAdjacentHTML('afterend',
-            '<p style="color:#7A969B;font-size:13px">Belum ada data pada rentang ini.</p>');
+            '<p style="color:#7A969B;font-size:13px">Belum ada data pada rentang/filter ini.</p>');
     }
     function bar(id, labels, values, color) {
         if (!labels.length) { empty(id); return; }

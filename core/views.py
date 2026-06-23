@@ -13,8 +13,9 @@ def dashboard(request):
     items = Item.objects.filter(is_active=True)
     movements = StockMovement.objects.all()
     if not request.user.is_superuser:
-        items = items.filter(location=request.user.location)
-        movements = movements.filter(item__location=request.user.location)
+        locs = request.user.locations.all()
+        items = items.filter(location__in=locs)
+        movements = movements.filter(item__location__in=locs)
 
     low_stock = items.filter(current_stock__lte=F("min_stock")).order_by("name")
     recent = movements.select_related("item", "user").order_by("-created_at")[:8]

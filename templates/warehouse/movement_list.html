@@ -3,18 +3,25 @@
 {% block body %}
 <h1 class="text-2xl font-semibold text-brand-ink mb-5">Riwayat transaksi</h1>
 
-<form method="get" class="flex flex-wrap items-center gap-2 mb-5 text-sm">
-    {% with t=type %}
-    <a href="?{% if q %}q={{ q }}{% endif %}" class="rounded-xl px-3 py-2 shadow-soft transition {% if not t %}bg-brand text-white{% else %}bg-white hover:bg-brand-soft{% endif %}">Semua</a>
-    <a href="?type=in{% if q %}&q={{ q }}{% endif %}" class="rounded-xl px-3 py-2 shadow-soft transition {% if t == 'in' %}bg-brand text-white{% else %}bg-white hover:bg-brand-soft{% endif %}">Masuk</a>
-    <a href="?type=out{% if q %}&q={{ q }}{% endif %}" class="rounded-xl px-3 py-2 shadow-soft transition {% if t == 'out' %}bg-brand text-white{% else %}bg-white hover:bg-brand-soft{% endif %}">Keluar</a>
-    <a href="?type=adjustment{% if q %}&q={{ q }}{% endif %}" class="rounded-xl px-3 py-2 shadow-soft transition {% if t == 'adjustment' %}bg-brand text-white{% else %}bg-white hover:bg-brand-soft{% endif %}">Penyesuaian</a>
-    {% endwith %}
-    <span class="mx-1 text-brand-muted">|</span>
-    <input type="text" name="q" value="{{ q }}" placeholder="Cari barang / referensi..."
-           class="bg-white rounded-xl px-4 py-2 w-56 shadow-soft outline-none focus:ring-2 focus:ring-brand/30">
-    {% if type %}<input type="hidden" name="type" value="{{ type }}">{% endif %}
-    <button type="submit" class="bg-white rounded-xl px-4 py-2 shadow-soft hover:bg-brand-soft transition">Cari</button>
+<form method="get" class="bg-white rounded-2xl shadow-soft p-4 mb-5 space-y-3 text-sm">
+    <div class="flex flex-wrap gap-2 items-center">
+        <select name="type" class="bg-brand-soft rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-brand/30">
+            <option value="" {% if not type %}selected{% endif %}>Semua jenis</option>
+            <option value="in" {% if type == 'in' %}selected{% endif %}>Masuk</option>
+            <option value="out" {% if type == 'out' %}selected{% endif %}>Keluar</option>
+            <option value="adjustment" {% if type == 'adjustment' %}selected{% endif %}>Penyesuaian</option>
+        </select>
+        <input type="text" name="q" value="{{ q }}" placeholder="Cari barang / referensi..."
+               class="bg-brand-soft rounded-xl px-4 py-2 w-56 outline-none focus:ring-2 focus:ring-brand/30">
+    </div>
+    {% if loc_options.count > 1 %}
+    {% include "partials/_checkbox_filter.html" with label="Lokasi" name="lokasi" options=loc_options selected=sel_locs %}
+    {% endif %}
+    {% include "partials/_checkbox_filter.html" with label="Kategori" name="kategori" options=cat_options selected=sel_cats %}
+    <div class="flex gap-2 pt-1">
+        <button type="submit" class="bg-brand text-white rounded-xl px-4 py-2 font-medium hover:bg-brand-dark transition">Terapkan</button>
+        <a href="{% url 'warehouse:movement_list' %}" class="px-3 py-2 text-brand-muted hover:text-brand-dark">Reset</a>
+    </div>
 </form>
 
 <div class="bg-white rounded-2xl shadow-soft overflow-hidden">
@@ -46,7 +53,7 @@
                 <td class="px-5 py-3 text-brand-muted">{{ m.reference|default:"-" }}</td>
             </tr>
             {% empty %}
-            <tr><td colspan="7" class="px-5 py-8 text-center text-brand-muted">Belum ada transaksi.</td></tr>
+            <tr><td colspan="7" class="px-5 py-8 text-center text-brand-muted">Tidak ada transaksi yang cocok.</td></tr>
             {% endfor %}
         </tbody>
     </table>
@@ -57,10 +64,10 @@
     <span>Halaman {{ page.number }} dari {{ page.paginator.num_pages }} · {{ page.paginator.count }} transaksi</span>
     <div class="flex gap-2">
         {% if page.has_previous %}
-        <a href="?page={{ page.previous_page_number }}{% if type %}&type={{ type }}{% endif %}{% if q %}&q={{ q }}{% endif %}" class="bg-white rounded-xl px-3 py-2 shadow-soft hover:bg-brand-soft transition">← Sebelumnya</a>
+        <a href="?page={{ page.previous_page_number }}{% if type %}&type={{ type }}{% endif %}{% if q %}&q={{ q }}{% endif %}{% for l in sel_locs %}&lokasi={{ l }}{% endfor %}{% for c in sel_cats %}&kategori={{ c }}{% endfor %}" class="bg-white rounded-xl px-3 py-2 shadow-soft hover:bg-brand-soft transition">← Sebelumnya</a>
         {% endif %}
         {% if page.has_next %}
-        <a href="?page={{ page.next_page_number }}{% if type %}&type={{ type }}{% endif %}{% if q %}&q={{ q }}{% endif %}" class="bg-white rounded-xl px-3 py-2 shadow-soft hover:bg-brand-soft transition">Berikutnya →</a>
+        <a href="?page={{ page.next_page_number }}{% if type %}&type={{ type }}{% endif %}{% if q %}&q={{ q }}{% endif %}{% for l in sel_locs %}&lokasi={{ l }}{% endfor %}{% for c in sel_cats %}&kategori={{ c }}{% endfor %}" class="bg-white rounded-xl px-3 py-2 shadow-soft hover:bg-brand-soft transition">Berikutnya →</a>
         {% endif %}
     </div>
 </div>

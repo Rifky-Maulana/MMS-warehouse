@@ -10,8 +10,7 @@ from django.db.models.functions import Coalesce, TruncDate
 from django.shortcuts import redirect, render
 from django.utils.dateparse import parse_date
 
-from core.access import warehouse_required
-from core.models import Location
+from core.access import allowed_locations, warehouse_required
 
 from .forms import MovementForm
 from .models import Category, Item, StockMovement
@@ -19,15 +18,15 @@ from .services import apply_movement
 
 
 def _scope_items(request, qs):
-    if not request.user.is_superuser:
-        qs = qs.filter(location=request.user.location)
-    return qs
+    if request.user.is_superuser:
+        return qs
+    return qs.filter(location__in=request.user.locations.all())
 
 
 def _scope_movements(request, qs):
-    if not request.user.is_superuser:
-        qs = qs.filter(item__location=request.user.location)
-    return qs
+    if request.user.is_superuser:
+        return qs
+    return qs.filter(item__location__in=request.user.locations.all())
 
 
 @login_required
@@ -36,6 +35,9 @@ def item_list(request):
     q = request.GET.get("q", "").strip()
     only_low = request.GET.get("low") == "1"
     show_inactive = request.GET.get("nonaktif") == "1"
+    sel_locs = request.GET.getlist("lokasi")
+    sel_cats = request.GET.getlist("kategori")
+
     items = _scope_items(request, Item.objects.select_related("category", "location")).order_by("name")
     if not show_inactive:
         items = items.filter(is_active=True)
@@ -43,8 +45,16 @@ def item_list(request):
         items = items.filter(Q(name__icontains=q) | Q(sku__icontains=q))
     if only_low:
         items = items.filter(current_stock__lte=F("min_stock"))
+    if sel_locs:
+        items = items.filter(location_id__in=sel_locs)
+    if sel_cats:
+        items = items.filter(category_id__in=sel_cats)
+
     return render(request, "warehouse/item_list.html", {
         "items": items, "q": q, "only_low": only_low, "show_inactive": show_inactive,
+        "loc_options": allowed_locations(request.user),
+        "cat_options": Category.objects.all(),
+        "sel_locs": sel_locs, "sel_cats": sel_cats,
     })
 
 
@@ -53,13 +63,26 @@ def item_list(request):
 def movement_list(request):
     mtype = request.GET.get("type", "")
     q = request.GET.get("q", "").strip()
+    sel_locs = request.GET.getlist("lokasi")
+    sel_cats = request.GET.getlist("kategori")
+
     qs = _scope_movements(request, StockMovement.objects.select_related("item", "item__location", "user", "supplier")).order_by("-created_at")
     if mtype in ("in", "out", "adjustment"):
         qs = qs.filter(type=mtype)
     if q:
         qs = qs.filter(Q(item__name__icontains=q) | Q(item__sku__icontains=q) | Q(reference__icontains=q))
+    if sel_locs:
+        qs = qs.filter(item__location_id__in=sel_locs)
+    if sel_cats:
+        qs = qs.filter(item__category_id__in=sel_cats)
+
     page = Paginator(qs, 25).get_page(request.GET.get("page"))
-    return render(request, "warehouse/movement_list.html", {"page": page, "type": mtype, "q": q})
+    return render(request, "warehouse/movement_list.html", {
+        "page": page, "type": mtype, "q": q,
+        "loc_options": allowed_locations(request.user),
+        "cat_options": Category.objects.all(),
+        "sel_locs": sel_locs, "sel_cats": sel_cats,
+    })
 
 
 @login_required
@@ -90,7 +113,7 @@ def analytics(request):
     date_from = parse_date(request.GET.get("from", "")) or (today - timedelta(days=30))
     sel_cat = request.GET.get("kategori") or ""
     sel_user = request.GET.get("pencatat") or ""
-    sel_loc = request.GET.get("lokasi") or ""
+    sel_locs = request.GET.getlist("lokasi")
 
     base = _scope_movements(request, StockMovement.objects.filter(
         created_at__date__gte=date_from, created_at__date__lte=date_to))
@@ -98,8 +121,8 @@ def analytics(request):
         base = base.filter(item__category_id=sel_cat)
     if sel_user:
         base = base.filter(user_id=sel_user)
-    if sel_loc and request.user.is_superuser:
-        base = base.filter(item__location_id=sel_loc)
+    if sel_locs:
+        base = base.filter(item__location_id__in=sel_locs)
 
     total_in = base.filter(type="in").aggregate(s=Sum("quantity"))["s"] or 0
     total_out = base.filter(type="out").aggregate(s=Sum("quantity"))["s"] or 0
@@ -119,7 +142,6 @@ def analytics(request):
         "keluar": [r["keluar"] for r in trend_rows],
     }
 
-    # Opsi slicer
     scoped_all = _scope_movements(request, StockMovement.objects.all())
     User = get_user_model()
     pencatat_list = User.objects.filter(
@@ -132,6 +154,6 @@ def analytics(request):
         "chart_data": {"keluar": top("out"), "masuk": top("in"), "trend": trend},
         "categories": Category.objects.all(),
         "pencatat_list": pencatat_list,
-        "locations": Location.objects.all() if request.user.is_superuser else None,
-        "sel_cat": sel_cat, "sel_user": sel_user, "sel_loc": sel_loc,
+        "loc_options": allowed_locations(request.user),
+        "sel_cat": sel_cat, "sel_user": sel_user, "sel_locs": sel_locs,
     })

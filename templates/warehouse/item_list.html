@@ -6,18 +6,25 @@
     <a href="{% url 'warehouse:movement_create' %}" class="bg-brand text-white text-sm rounded-xl px-4 py-2 font-medium hover:bg-brand-dark transition">+ Catat transaksi</a>
 </div>
 
-<form method="get" class="flex flex-wrap gap-2 mb-5 text-sm">
-    <input type="text" name="q" value="{{ q }}" placeholder="Cari nama atau SKU..."
-           class="bg-white rounded-xl px-4 py-2 w-64 shadow-soft outline-none focus:ring-2 focus:ring-brand/30">
-    {% if show_inactive %}<input type="hidden" name="nonaktif" value="1">{% endif %}
-    <button type="submit" class="bg-white rounded-xl px-4 py-2 shadow-soft hover:bg-brand-soft transition">Cari</button>
-    <a href="?low=1{% if show_inactive %}&nonaktif=1{% endif %}" class="rounded-xl px-4 py-2 shadow-soft transition {% if only_low %}bg-brand text-white{% else %}bg-white hover:bg-brand-soft{% endif %}">Stok menipis</a>
-    {% if show_inactive %}
-    <a href="{% url 'warehouse:item_list' %}" class="rounded-xl px-4 py-2 shadow-soft bg-brand text-white transition">Sembunyikan nonaktif</a>
-    {% else %}
-    <a href="?nonaktif=1" class="rounded-xl px-4 py-2 shadow-soft bg-white hover:bg-brand-soft transition">Tampilkan nonaktif</a>
+<form method="get" class="bg-white rounded-2xl shadow-soft p-4 mb-5 space-y-3 text-sm">
+    <div class="flex flex-wrap gap-2 items-center">
+        <input type="text" name="q" value="{{ q }}" placeholder="Cari nama atau SKU..."
+               class="bg-brand-soft rounded-xl px-4 py-2 w-64 outline-none focus:ring-2 focus:ring-brand/30">
+        <label class="inline-flex items-center gap-1.5 bg-brand-soft rounded-xl px-3 py-2 cursor-pointer hover:bg-brand-tint transition">
+            <input type="checkbox" name="low" value="1" class="accent-[#07A4B6]" {% if only_low %}checked{% endif %}> Stok menipis
+        </label>
+        <label class="inline-flex items-center gap-1.5 bg-brand-soft rounded-xl px-3 py-2 cursor-pointer hover:bg-brand-tint transition">
+            <input type="checkbox" name="nonaktif" value="1" class="accent-[#07A4B6]" {% if show_inactive %}checked{% endif %}> Tampilkan nonaktif
+        </label>
+    </div>
+    {% if loc_options.count > 1 %}
+    {% include "partials/_checkbox_filter.html" with label="Lokasi" name="lokasi" options=loc_options selected=sel_locs %}
     {% endif %}
-    {% if q or only_low %}<a href="{% url 'warehouse:item_list' %}" class="px-3 py-2 text-brand-muted hover:text-brand-dark">Reset</a>{% endif %}
+    {% include "partials/_checkbox_filter.html" with label="Kategori" name="kategori" options=cat_options selected=sel_cats %}
+    <div class="flex gap-2 pt-1">
+        <button type="submit" class="bg-brand text-white rounded-xl px-4 py-2 font-medium hover:bg-brand-dark transition">Terapkan</button>
+        <a href="{% url 'warehouse:item_list' %}" class="px-3 py-2 text-brand-muted hover:text-brand-dark">Reset</a>
+    </div>
 </form>
 
 <div class="bg-white rounded-2xl shadow-soft overflow-hidden">
@@ -54,7 +61,7 @@
                 </td>
             </tr>
             {% empty %}
-            <tr><td colspan="7" class="px-5 py-8 text-center text-brand-muted">Belum ada barang.</td></tr>
+            <tr><td colspan="7" class="px-5 py-8 text-center text-brand-muted">Tidak ada barang yang cocok.</td></tr>
             {% endfor %}
         </tbody>
     </table>

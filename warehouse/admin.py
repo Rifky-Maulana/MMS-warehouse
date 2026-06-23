@@ -46,7 +46,7 @@ class ItemAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         if not request.user.is_superuser:
-            qs = qs.filter(location=request.user.location)
+            qs = qs.filter(location__in=request.user.locations.all())
         return qs
 
 
@@ -87,7 +87,7 @@ class StockMovementAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         if not request.user.is_superuser:
-            qs = qs.filter(item__location=request.user.location)
+            qs = qs.filter(item__location__in=request.user.locations.all())
         return qs
 
     def get_readonly_fields(self, request, obj=None):

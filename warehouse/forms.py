@@ -4,8 +4,6 @@ from .models import Item, StockMovement
 
 
 class MovementForm(forms.ModelForm):
-    """Form catat transaksi untuk staf (di luar admin), terkunci lokasi user."""
-
     class Meta:
         model = StockMovement
         fields = ("item", "type", "quantity", "supplier", "note", "reference")
@@ -14,7 +12,7 @@ class MovementForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         items = Item.objects.filter(is_active=True)
         if user is not None and not user.is_superuser:
-            items = items.filter(location=user.location)
+            items = items.filter(location__in=user.locations.all())
         self.fields["item"].queryset = items.select_related("location").order_by("name")
         self.fields["supplier"].required = False
         css = "w-full bg-brand-soft rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-brand/30"

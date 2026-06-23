@@ -7,10 +7,19 @@ from .models import AuditLog, Division, Location, User
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
     fieldsets = BaseUserAdmin.fieldsets + (
-        ("Organisasi", {"fields": ("division", "location")}),
+        ("Organisasi", {"fields": ("divisions", "locations")}),
     )
-    list_display = ("username", "email", "location", "division", "is_staff", "is_active")
-    list_filter = BaseUserAdmin.list_filter + ("location", "division")
+    filter_horizontal = ("divisions", "locations")
+    list_display = ("username", "email", "lokasi_list", "divisi_list", "is_staff", "is_active")
+    list_filter = BaseUserAdmin.list_filter + ("locations", "divisions")
+
+    @admin.display(description="Lokasi")
+    def lokasi_list(self, obj):
+        return ", ".join(l.name for l in obj.locations.all()) or "-"
+
+    @admin.display(description="Divisi")
+    def divisi_list(self, obj):
+        return ", ".join(d.name for d in obj.divisions.all()) or "-"
 
 
 @admin.register(Location)

@@ -2,23 +2,30 @@ from functools import wraps
 
 from django.shortcuts import redirect
 
-# Kode divisi yang boleh membuka modul Gudang.
 WAREHOUSE_DIVISION_CODE = "GUDANG"
 
 
 def can_access_warehouse(user) -> bool:
-    """Boleh buka modul Gudang jika: superadmin, ATAU belum punya divisi
-    (biar user lama tidak terkunci), ATAU divisinya berkode GUDANG."""
+    """Boleh buka Gudang jika: superadmin, ATAU belum punya divisi,
+    ATAU salah satu divisinya berkode GUDANG."""
     if not user.is_authenticated:
         return False
     if user.is_superuser:
         return True
-    div = user.division
-    return div is None or div.code == WAREHOUSE_DIVISION_CODE
+    if not user.divisions.exists():
+        return True
+    return user.divisions.filter(code=WAREHOUSE_DIVISION_CODE).exists()
+
+
+def allowed_locations(user):
+    """Queryset lokasi yang boleh dilihat user. Superadmin = semua lokasi."""
+    from .models import Location
+    if user.is_superuser:
+        return Location.objects.all()
+    return user.locations.all()
 
 
 def warehouse_required(view_func):
-    """Pagari view modul Gudang. User tanpa akses diarahkan ke halaman netral."""
     @wraps(view_func)
     def _wrapped(request, *args, **kwargs):
         if not can_access_warehouse(request.user):

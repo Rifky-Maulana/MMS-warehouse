@@ -3,7 +3,6 @@ from django.db import models
 
 
 class Division(models.Model):
-    """Divisi perusahaan (Gudang, dan nanti bisa SDM, Keuangan, dst)."""
     name = models.CharField("Nama", max_length=100)
     code = models.CharField("Kode", max_length=20, unique=True)
 
@@ -16,7 +15,6 @@ class Division(models.Model):
 
 
 class Location(models.Model):
-    """Lokasi/cabang gudang (mis. Jogja, Bandung, Solo)."""
     name = models.CharField("Nama", max_length=100)
     code = models.CharField("Kode", max_length=20, unique=True)
 
@@ -30,13 +28,11 @@ class Location(models.Model):
 
 
 class User(AbstractUser):
-    division = models.ForeignKey(
-        Division, on_delete=models.SET_NULL, null=True, blank=True,
-        related_name="users", verbose_name="Divisi",
+    divisions = models.ManyToManyField(
+        Division, blank=True, related_name="users", verbose_name="Divisi",
     )
-    location = models.ForeignKey(
-        Location, on_delete=models.SET_NULL, null=True, blank=True,
-        related_name="users", verbose_name="Lokasi",
+    locations = models.ManyToManyField(
+        Location, blank=True, related_name="users", verbose_name="Lokasi",
     )
 
     def __str__(self):

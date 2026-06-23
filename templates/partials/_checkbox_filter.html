@@ -1,0 +1,12 @@
+{% comment %}Filter checkbox chip. Param: label, name, options (queryset), selected (list of str id){% endcomment %}
+<div>
+    <span class="block text-xs text-brand-muted mb-1.5">{{ label }}</span>
+    <div class="flex flex-wrap gap-2">
+        {% for opt in options %}
+        <label class="inline-flex items-center gap-1.5 bg-brand-soft rounded-xl px-3 py-1.5 cursor-pointer hover:bg-brand-tint transition">
+            <input type="checkbox" name="{{ name }}" value="{{ opt.id }}" class="accent-[#07A4B6]" {% if opt.id|stringformat:'s' in selected %}checked{% endif %}>
+            <span class="text-slate-700">{{ opt }}</span>
+        </label>
+        {% endfor %}
+    </div>
+</div>

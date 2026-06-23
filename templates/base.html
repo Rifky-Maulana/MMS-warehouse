@@ -133,7 +133,7 @@
         </nav>
 
         <div class="px-4 py-3 border-t border-slate-100 text-xs text-brand-muted">
-            v1.1 · {% if request.user.location %}{{ request.user.location }}{% else %}Semua lokasi{% endif %}
+            v1.1 · {% if request.user.is_superuser %}Semua lokasi{% else %}{% for l in request.user.locations.all %}{{ l }}{% if not forloop.last %}, {% endif %}{% empty %}Tanpa lokasi{% endfor %}{% endif %}
         </div>
     </aside>
 
