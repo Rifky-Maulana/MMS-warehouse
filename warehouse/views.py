@@ -10,6 +10,7 @@ from django.db.models.functions import Coalesce, TruncDate
 from django.shortcuts import redirect, render
 from django.utils.dateparse import parse_date
 
+from core.access import warehouse_required
 from core.models import Location
 
 from .forms import MovementForm
@@ -30,6 +31,7 @@ def _scope_movements(request, qs):
 
 
 @login_required
+@warehouse_required
 def item_list(request):
     q = request.GET.get("q", "").strip()
     only_low = request.GET.get("low") == "1"
@@ -47,6 +49,7 @@ def item_list(request):
 
 
 @login_required
+@warehouse_required
 def movement_list(request):
     mtype = request.GET.get("type", "")
     q = request.GET.get("q", "").strip()
@@ -60,6 +63,7 @@ def movement_list(request):
 
 
 @login_required
+@warehouse_required
 def movement_create(request):
     if request.method == "POST":
         form = MovementForm(request.POST, user=request.user)
@@ -79,6 +83,7 @@ def movement_create(request):
 
 
 @user_passes_test(lambda u: u.is_staff, login_url="login")
+@warehouse_required
 def analytics(request):
     today = date.today()
     date_to = parse_date(request.GET.get("to", "")) or today

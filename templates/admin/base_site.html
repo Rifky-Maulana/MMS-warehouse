@@ -1,0 +1,69 @@
+{% extends "admin/base.html" %}
+{% load i18n %}
+
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block branding %}
+<div id="site-name"><a href="{% url 'admin:index' %}">{{ site_header|default:_('Django administration') }}</a></div>
+{% if user.is_anonymous %}
+  {% include "admin/color_theme_toggle.html" %}
+{% endif %}
+{% endblock %}
+
+{% block nav-global %}{% endblock %}
+
+{% block extrastyle %}{{ block.super }}
+<style>
+/* ===== Tema brand Gudang MMS (berlaku di mode terang & gelap) ===== */
+:root,
+html[data-theme="light"],
+html[data-theme="dark"] {
+    --primary: #06869A;
+    --secondary: #07A4B6;
+    --accent: #07A4B6;
+    --primary-fg: #ffffff;
+
+    --header-color: #ffffff;
+    --header-branding-color: #ffffff;
+    --header-bg: #07A4B6;
+    --header-link-color: #ffffff;
+
+    --breadcrumbs-fg: #e6f6f8;
+    --breadcrumbs-link-fg: #ffffff;
+    --breadcrumbs-bg: #06869A;
+
+    --link-fg: #07A4B6;
+    --link-hover-color: #055E6B;
+    --link-selected-fg: #06869A;
+
+    --button-bg: #07A4B6;
+    --button-hover-bg: #06869A;
+    --default-button-bg: #06869A;
+    --default-button-hover-bg: #055E6B;
+    --object-tools-bg: #06869A;
+    --object-tools-hover-bg: #055E6B;
+}
+
+/* Logo kecil di sebelah nama situs */
+#site-name a::before {
+    content: "";
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    margin-right: 8px;
+    border-radius: 5px;
+    background: #ffffff;
+    vertical-align: -3px;
+}
+
+/* Sudut sedikit lebih lembut */
+.module,
+.object-tools a,
+.button,
+input[type=submit],
+.submit-row input,
+#toolbar input[type=submit] {
+    border-radius: 8px;
+}
+</style>
+{% endblock %}

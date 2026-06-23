@@ -34,3 +34,9 @@ class AuditLogAdmin(admin.ModelAdmin):
 
     def has_add_permission(self, request):
         return False
+
+
+# ===== Branding panel admin =====
+admin.site.site_header = "Gudang MMS — Panel Admin"
+admin.site.site_title = "Gudang MMS Admin"
+admin.site.index_title = "Modul MMS ERP"

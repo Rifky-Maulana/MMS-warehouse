@@ -45,7 +45,7 @@
     <aside class="w-64 shrink-0 bg-white border-r border-slate-100 flex flex-col">
         <div class="h-14 flex items-center gap-2 px-5 border-b border-slate-100">
             <span class="w-7 h-7 rounded-lg bg-brand grid place-items-center text-white text-sm font-bold">M</span>
-            <span class="font-semibold text-brand">MMS</span>
+            <span class="font-semibold text-brand">Gudang MMS</span>
         </div>
 
         <nav class="flex-1 overflow-y-auto py-3 px-3 space-y-1 text-sm">
@@ -55,6 +55,7 @@
             {% url 'warehouse:analytics' as u_analitik %}
             {% url 'warehouse:movement_create' as u_catat %}
 
+            {% if can_warehouse %}
             <details open>
                 <summary class="flex items-center justify-between px-2 py-2 rounded-lg cursor-pointer text-brand-ink font-medium hover:bg-brand-soft">
                     <span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-sm bg-brand"></span>Gudang</span>
@@ -70,6 +71,20 @@
                     <a href="{{ u_catat }}" class="block px-2 py-1.5 pl-7 rounded-lg {% if request.path == u_catat %}bg-brand-tint text-brand-dark font-medium{% else %}text-slate-600 hover:bg-brand-soft{% endif %}">Catat Transaksi</a>
                 </div>
             </details>
+            {% else %}
+            <details>
+                <summary class="flex items-center justify-between px-2 py-2 rounded-lg cursor-pointer text-brand-muted hover:bg-brand-soft">
+                    <span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-sm bg-slate-300"></span>Gudang</span>
+                    <span class="flex items-center gap-2"><span class="text-[10px] bg-slate-100 text-slate-400 px-2 py-0.5 rounded-full">Terkunci</span><svg class="chev w-4 h-4 text-brand-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></span>
+                </summary>
+                <div class="mt-1 mb-2 space-y-0.5 text-slate-400">
+                    <span class="block px-2 py-1.5 pl-7 cursor-default select-none">Dashboard Gudang</span>
+                    <span class="block px-2 py-1.5 pl-7 cursor-default select-none">Stok</span>
+                    <span class="block px-2 py-1.5 pl-7 cursor-default select-none">Riwayat</span>
+                    <span class="block px-2 py-1.5 pl-7 cursor-default select-none">Catat Transaksi</span>
+                </div>
+            </details>
+            {% endif %}
 
             <details>
                 <summary class="flex items-center justify-between px-2 py-2 rounded-lg cursor-pointer text-brand-muted hover:bg-brand-soft">

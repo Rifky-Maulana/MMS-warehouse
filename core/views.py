@@ -4,8 +4,11 @@ from django.shortcuts import render
 
 from warehouse.models import Item, StockMovement
 
+from .access import warehouse_required
+
 
 @login_required
+@warehouse_required
 def dashboard(request):
     items = Item.objects.filter(is_active=True)
     movements = StockMovement.objects.all()
@@ -22,3 +25,8 @@ def dashboard(request):
         "low_stock_count": low_stock.count(),
         "total_movements": movements.count(),
     })
+
+
+@login_required
+def no_access(request):
+    return render(request, "no_access.html")
