@@ -1,12 +1,16 @@
 from datetime import date, timedelta
 
+from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.paginator import Paginator
 from django.db.models import F, Q, Sum
+from django.db.models.functions import Coalesce, TruncDate
 from django.shortcuts import render
 from django.utils.dateparse import parse_date
 
-from .models import Item, StockMovement
+from core.models import Location
+
+from .models import Category, Item, StockMovement
 
 
 def _scope_items(request, qs):
@@ -26,7 +30,6 @@ def item_list(request):
     q = request.GET.get("q", "").strip()
     only_low = request.GET.get("low") == "1"
     show_inactive = request.GET.get("nonaktif") == "1"
-
     items = _scope_items(request, Item.objects.select_related("category", "location")).order_by("name")
     if not show_inactive:
         items = items.filter(is_active=True)
@@ -34,7 +37,6 @@ def item_list(request):
         items = items.filter(Q(name__icontains=q) | Q(sku__icontains=q))
     if only_low:
         items = items.filter(current_stock__lte=F("min_stock"))
-
     return render(request, "warehouse/item_list.html", {
         "items": items, "q": q, "only_low": only_low, "show_inactive": show_inactive,
     })
@@ -44,7 +46,7 @@ def item_list(request):
 def movement_list(request):
     mtype = request.GET.get("type", "")
     q = request.GET.get("q", "").strip()
-    qs = _scope_movements(request, StockMovement.objects.select_related("item", "user", "supplier")).order_by("-created_at")
+    qs = _scope_movements(request, StockMovement.objects.select_related("item", "item__location", "user", "supplier")).order_by("-created_at")
     if mtype in ("in", "out", "adjustment"):
         qs = qs.filter(type=mtype)
     if q:
@@ -58,10 +60,19 @@ def analytics(request):
     today = date.today()
     date_to = parse_date(request.GET.get("to", "")) or today
     date_from = parse_date(request.GET.get("from", "")) or (today - timedelta(days=30))
+    sel_cat = request.GET.get("kategori") or ""
+    sel_user = request.GET.get("pencatat") or ""
+    sel_loc = request.GET.get("lokasi") or ""
 
     base = _scope_movements(request, StockMovement.objects.filter(
-        created_at__date__gte=date_from, created_at__date__lte=date_to
-    ))
+        created_at__date__gte=date_from, created_at__date__lte=date_to))
+    if sel_cat:
+        base = base.filter(item__category_id=sel_cat)
+    if sel_user:
+        base = base.filter(user_id=sel_user)
+    if sel_loc and request.user.is_superuser:
+        base = base.filter(item__location_id=sel_loc)
+
     total_in = base.filter(type="in").aggregate(s=Sum("quantity"))["s"] or 0
     total_out = base.filter(type="out").aggregate(s=Sum("quantity"))["s"] or 0
 
@@ -70,8 +81,29 @@ def analytics(request):
                 .annotate(total=Sum("quantity")).order_by("-total")[:10])
         return {"labels": [r["item__name"] for r in rows], "values": [r["total"] for r in rows]}
 
+    trend_rows = (base.annotate(day=TruncDate("created_at")).values("day").annotate(
+        masuk=Coalesce(Sum("quantity", filter=Q(type="in")), 0),
+        keluar=Coalesce(Sum("quantity", filter=Q(type="out")), 0),
+    ).order_by("day"))
+    trend = {
+        "labels": [r["day"].strftime("%d %b") for r in trend_rows],
+        "masuk": [r["masuk"] for r in trend_rows],
+        "keluar": [r["keluar"] for r in trend_rows],
+    }
+
+    # Opsi slicer
+    scoped_all = _scope_movements(request, StockMovement.objects.all())
+    User = get_user_model()
+    pencatat_list = User.objects.filter(
+        id__in=scoped_all.values_list("user_id", flat=True).distinct()
+    ).order_by("username")
+
     return render(request, "warehouse/analytics.html", {
         "date_from": date_from, "date_to": date_to,
         "total_in": total_in, "total_out": total_out,
-        "chart_data": {"keluar": top("out"), "masuk": top("in")},
+        "chart_data": {"keluar": top("out"), "masuk": top("in"), "trend": trend},
+        "categories": Category.objects.all(),
+        "pencatat_list": pencatat_list,
+        "locations": Location.objects.all() if request.user.is_superuser else None,
+        "sel_cat": sel_cat, "sel_user": sel_user, "sel_loc": sel_loc,
     })

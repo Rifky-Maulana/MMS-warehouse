@@ -24,6 +24,7 @@
                 <th class="px-5 py-3 font-medium">Waktu</th>
                 <th class="px-5 py-3 font-medium">Jenis</th>
                 <th class="px-5 py-3 font-medium">Barang</th>
+                <th class="px-5 py-3 font-medium">Lokasi</th>
                 <th class="px-5 py-3 font-medium text-right">Jumlah</th>
                 <th class="px-5 py-3 font-medium">Pencatat</th>
                 <th class="px-5 py-3 font-medium">Referensi</th>
@@ -39,12 +40,13 @@
                     {% else %}<span class="bg-amber-50 text-amber-700 text-xs px-3 py-1 rounded-full">Penyesuaian</span>{% endif %}
                 </td>
                 <td class="px-5 py-3 text-slate-700">{{ m.item.name }}</td>
+                <td class="px-5 py-3 text-brand-muted">{{ m.item.location|default:"-" }}</td>
                 <td class="px-5 py-3 text-right font-medium text-slate-700">{{ m.quantity }}</td>
                 <td class="px-5 py-3 text-brand-muted">{{ m.user|default:"-" }}</td>
                 <td class="px-5 py-3 text-brand-muted">{{ m.reference|default:"-" }}</td>
             </tr>
             {% empty %}
-            <tr><td colspan="6" class="px-5 py-8 text-center text-brand-muted">Belum ada transaksi.</td></tr>
+            <tr><td colspan="7" class="px-5 py-8 text-center text-brand-muted">Belum ada transaksi.</td></tr>
             {% endfor %}
         </tbody>
     </table>

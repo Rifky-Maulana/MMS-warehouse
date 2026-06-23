@@ -74,11 +74,15 @@ class StockMovementForm(forms.ModelForm):
 @admin.register(StockMovement)
 class StockMovementAdmin(admin.ModelAdmin):
     form = StockMovementForm
-    list_display = ("created_at", "type", "item", "quantity", "user", "supplier", "reference")
+    list_display = ("created_at", "type", "item", "lokasi", "quantity", "user", "supplier", "reference")
     list_filter = ("type", "created_at", "item__location")
     search_fields = ("item__name", "item__sku", "reference", "note")
-    list_select_related = ("item", "user", "supplier")
+    list_select_related = ("item", "item__location", "user", "supplier")
     autocomplete_fields = ("item", "supplier")
+
+    @admin.display(description="Lokasi", ordering="item__location")
+    def lokasi(self, obj):
+        return obj.item.location or "-"
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
