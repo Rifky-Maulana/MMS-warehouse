@@ -9,8 +9,14 @@
 <form method="get" class="flex flex-wrap gap-2 mb-5 text-sm">
     <input type="text" name="q" value="{{ q }}" placeholder="Cari nama atau SKU..."
            class="bg-white rounded-xl px-4 py-2 w-64 shadow-soft outline-none focus:ring-2 focus:ring-brand/30">
+    {% if show_inactive %}<input type="hidden" name="nonaktif" value="1">{% endif %}
     <button type="submit" class="bg-white rounded-xl px-4 py-2 shadow-soft hover:bg-brand-soft transition">Cari</button>
-    <a href="?low=1" class="rounded-xl px-4 py-2 shadow-soft transition {% if only_low %}bg-brand text-white{% else %}bg-white hover:bg-brand-soft{% endif %}">Stok menipis</a>
+    <a href="?low=1{% if show_inactive %}&nonaktif=1{% endif %}" class="rounded-xl px-4 py-2 shadow-soft transition {% if only_low %}bg-brand text-white{% else %}bg-white hover:bg-brand-soft{% endif %}">Stok menipis</a>
+    {% if show_inactive %}
+    <a href="{% url 'warehouse:item_list' %}" class="rounded-xl px-4 py-2 shadow-soft bg-brand text-white transition">Sembunyikan nonaktif</a>
+    {% else %}
+    <a href="?nonaktif=1" class="rounded-xl px-4 py-2 shadow-soft bg-white hover:bg-brand-soft transition">Tampilkan nonaktif</a>
+    {% endif %}
     {% if q or only_low %}<a href="{% url 'warehouse:item_list' %}" class="px-3 py-2 text-brand-muted hover:text-brand-dark">Reset</a>{% endif %}
 </form>
 
@@ -29,9 +35,12 @@
         </thead>
         <tbody>
             {% for item in items %}
-            <tr class="border-b border-slate-50 hover:bg-brand-soft/60 transition">
+            <tr class="border-b border-slate-50 hover:bg-brand-soft/60 transition {% if not item.is_active %}opacity-50{% endif %}">
                 <td class="px-5 py-3 text-brand-muted">{{ item.sku }}</td>
-                <td class="px-5 py-3 text-slate-700">{{ item.name }}</td>
+                <td class="px-5 py-3 text-slate-700">
+                    {{ item.name }}
+                    {% if not item.is_active %}<span class="ml-1 bg-slate-100 text-slate-500 text-xs px-2 py-0.5 rounded-full">Nonaktif</span>{% endif %}
+                </td>
                 <td class="px-5 py-3 text-brand-muted">{{ item.location|default:"-" }}</td>
                 <td class="px-5 py-3 text-brand-muted">{{ item.category|default:"-" }}</td>
                 <td class="px-5 py-3 text-right {% if item.is_low_stock %}text-red-500 font-medium{% else %}text-slate-700{% endif %}">{{ item.current_stock }}</td>

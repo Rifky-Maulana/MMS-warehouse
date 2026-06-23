@@ -10,7 +10,6 @@ from .models import Item, StockMovement
 
 
 def _scope_items(request, qs):
-    """Saring barang ke lokasi user (superadmin lihat semua)."""
     if not request.user.is_superuser:
         qs = qs.filter(location=request.user.location)
     return qs
@@ -26,12 +25,19 @@ def _scope_movements(request, qs):
 def item_list(request):
     q = request.GET.get("q", "").strip()
     only_low = request.GET.get("low") == "1"
+    show_inactive = request.GET.get("nonaktif") == "1"
+
     items = _scope_items(request, Item.objects.select_related("category", "location")).order_by("name")
+    if not show_inactive:
+        items = items.filter(is_active=True)
     if q:
         items = items.filter(Q(name__icontains=q) | Q(sku__icontains=q))
     if only_low:
         items = items.filter(current_stock__lte=F("min_stock"))
-    return render(request, "warehouse/item_list.html", {"items": items, "q": q, "only_low": only_low})
+
+    return render(request, "warehouse/item_list.html", {
+        "items": items, "q": q, "only_low": only_low, "show_inactive": show_inactive,
+    })
 
 
 @login_required

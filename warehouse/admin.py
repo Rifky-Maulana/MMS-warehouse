@@ -17,16 +17,27 @@ class SupplierAdmin(admin.ModelAdmin):
     search_fields = ("name", "contact")
 
 
+@admin.action(description="Aktifkan barang terpilih")
+def aktifkan(modeladmin, request, queryset):
+    queryset.update(is_active=True)
+
+
+@admin.action(description="Nonaktifkan barang terpilih")
+def nonaktifkan(modeladmin, request, queryset):
+    queryset.update(is_active=False)
+
+
 @admin.register(Item)
 class ItemAdmin(admin.ModelAdmin):
     list_display = (
         "sku", "name", "location", "category", "unit",
-        "current_stock", "min_stock", "stok_menipis",
+        "current_stock", "min_stock", "is_active", "stok_menipis",
     )
-    list_filter = ("location", "category", "unit")
+    list_filter = ("is_active", "location", "category", "unit")
     search_fields = ("sku", "name")
     list_select_related = ("category", "location")
     readonly_fields = ("current_stock",)
+    actions = [aktifkan, nonaktifkan]
 
     @admin.display(boolean=True, description="Stok menipis?")
     def stok_menipis(self, obj):

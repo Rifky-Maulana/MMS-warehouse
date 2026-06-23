@@ -54,6 +54,11 @@ class Item(models.Model):
     unit = models.CharField("Satuan", max_length=10, choices=Unit.choices, default=Unit.PCS)
     current_stock = models.PositiveIntegerField("Stok Saat Ini", default=0)
     min_stock = models.PositiveIntegerField("Stok Minimum", default=0)
+    is_active = models.BooleanField(
+        "Aktif", default=True,
+        help_text="Hilangkan centang untuk menonaktifkan barang (disembunyikan dari daftar, "
+                  "tanpa menghapus data & riwayatnya).",
+    )
     created_at = models.DateTimeField("Dibuat", auto_now_add=True)
     updated_at = models.DateTimeField("Diperbarui", auto_now=True)
 

@@ -7,7 +7,7 @@ from warehouse.models import Item, StockMovement
 
 @login_required
 def dashboard(request):
-    items = Item.objects.all()
+    items = Item.objects.filter(is_active=True)
     movements = StockMovement.objects.all()
     if not request.user.is_superuser:
         items = items.filter(location=request.user.location)
