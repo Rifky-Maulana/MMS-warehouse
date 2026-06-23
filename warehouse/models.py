@@ -3,7 +3,6 @@ from django.db import models
 
 
 class Category(models.Model):
-    """Kategori/pengelompokan barang."""
     name = models.CharField("Nama", max_length=100, unique=True)
 
     class Meta:
@@ -16,9 +15,8 @@ class Category(models.Model):
 
 
 class Supplier(models.Model):
-    """Pemasok barang."""
     name = models.CharField("Nama", max_length=150)
-    contact = models.CharField("Kontak", max_length=150, blank=True)  # telp/email
+    contact = models.CharField("Kontak", max_length=150, blank=True)
 
     class Meta:
         verbose_name = "Supplier"
@@ -30,8 +28,6 @@ class Supplier(models.Model):
 
 
 class Item(models.Model):
-    """Master barang di gudang."""
-
     class Unit(models.TextChoices):
         PCS = "pcs", "Pcs"
         BOX = "box", "Box"
@@ -39,21 +35,23 @@ class Item(models.Model):
         LITER = "liter", "Liter"
         PACK = "pack", "Pack"
 
-    sku = models.CharField("Kode (SKU)", max_length=50, unique=True)
+    # SKU unik PER LOKASI (lihat Meta.constraints), jadi kode yang sama
+    # boleh dipakai di lokasi berbeda.
+    sku = models.CharField("Kode (SKU)", max_length=50)
     name = models.CharField("Nama", max_length=200)
-    category = models.ForeignKey(
-        Category,
-        on_delete=models.SET_NULL,
+    location = models.ForeignKey(
+        "core.Location",
+        on_delete=models.PROTECT,
         null=True,
         blank=True,
         related_name="items",
-        verbose_name="Kategori",
+        verbose_name="Lokasi",
     )
-    unit = models.CharField(
-        "Satuan", max_length=10, choices=Unit.choices, default=Unit.PCS
+    category = models.ForeignKey(
+        Category, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="items", verbose_name="Kategori",
     )
-    # current_stock = angka cache. Mulai Tahap 4 hanya berubah lewat StockMovement,
-    # tidak diketik manual lagi (di admin dibuat read-only).
+    unit = models.CharField("Satuan", max_length=10, choices=Unit.choices, default=Unit.PCS)
     current_stock = models.PositiveIntegerField("Stok Saat Ini", default=0)
     min_stock = models.PositiveIntegerField("Stok Minimum", default=0)
     created_at = models.DateTimeField("Dibuat", auto_now_add=True)
@@ -63,47 +61,36 @@ class Item(models.Model):
         verbose_name = "Barang"
         verbose_name_plural = "Barang"
         ordering = ["name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["location", "sku"], name="uniq_item_sku_per_location"
+            )
+        ]
 
     def __str__(self):
         return f"{self.name} ({self.sku})"
 
     @property
     def is_low_stock(self) -> bool:
-        """True bila stok sudah di bawah atau sama dengan batas minimum."""
         return self.current_stock <= self.min_stock
 
 
 class StockMovement(models.Model):
-    """
-    Catatan pergerakan stok = sumber kebenaran (ledger).
-    Sekali dibuat TIDAK diubah/dihapus, supaya Stok Saat Ini selalu konsisten.
-    """
-
     class Type(models.TextChoices):
         IN = "in", "Masuk"
         OUT = "out", "Keluar"
         ADJUSTMENT = "adjustment", "Penyesuaian"
 
     item = models.ForeignKey(
-        Item,
-        on_delete=models.PROTECT,   # barang dengan riwayat tidak boleh dihapus
-        related_name="movements",
-        verbose_name="Barang",
+        Item, on_delete=models.PROTECT, related_name="movements", verbose_name="Barang",
     )
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name="stock_movements",
-        verbose_name="Pencatat",
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True,
+        related_name="stock_movements", verbose_name="Pencatat",
     )
     supplier = models.ForeignKey(
-        Supplier,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="movements",
-        verbose_name="Supplier",
+        Supplier, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="movements", verbose_name="Supplier",
     )
     type = models.CharField("Jenis", max_length=12, choices=Type.choices)
     quantity = models.PositiveIntegerField(

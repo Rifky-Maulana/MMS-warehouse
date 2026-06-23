@@ -5,7 +5,7 @@ from django.db import models
 class Division(models.Model):
     """Divisi perusahaan (Gudang, dan nanti bisa SDM, Keuangan, dst)."""
     name = models.CharField("Nama", max_length=100)
-    code = models.CharField("Kode", max_length=20, unique=True)  # mis. "WH"
+    code = models.CharField("Kode", max_length=20, unique=True)
 
     class Meta:
         verbose_name = "Divisi"
@@ -15,18 +15,28 @@ class Division(models.Model):
         return self.name
 
 
+class Location(models.Model):
+    """Lokasi/cabang gudang (mis. Jogja, Bandung, Solo)."""
+    name = models.CharField("Nama", max_length=100)
+    code = models.CharField("Kode", max_length=20, unique=True)
+
+    class Meta:
+        verbose_name = "Lokasi"
+        verbose_name_plural = "Lokasi"
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
+
+
 class User(AbstractUser):
-    """
-    User aplikasi. AbstractUser sudah menyediakan username, email,
-    password, is_active, is_staff, grup & izin. Kita hanya menambah divisi.
-    """
     division = models.ForeignKey(
-        Division,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="users",
-        verbose_name="Divisi",
+        Division, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="users", verbose_name="Divisi",
+    )
+    location = models.ForeignKey(
+        Location, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="users", verbose_name="Lokasi",
     )
 
     def __str__(self):
@@ -34,15 +44,11 @@ class User(AbstractUser):
 
 
 class AuditLog(models.Model):
-    """Jejak aktivitas penting: siapa, apa, kapan, dari IP mana."""
     user = models.ForeignKey(
-        User,
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name="audit_logs",
-        verbose_name="Pelaku",
+        User, on_delete=models.SET_NULL, null=True,
+        related_name="audit_logs", verbose_name="Pelaku",
     )
-    action = models.CharField("Aksi", max_length=100)            # mis. "stock.out"
+    action = models.CharField("Aksi", max_length=100)
     description = models.CharField("Keterangan", max_length=255, blank=True)
     ip_address = models.GenericIPAddressField("Alamat IP", null=True, blank=True)
     created_at = models.DateTimeField("Waktu", auto_now_add=True)

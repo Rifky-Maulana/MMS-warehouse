@@ -9,11 +9,24 @@ from django.utils.dateparse import parse_date
 from .models import Item, StockMovement
 
 
+def _scope_items(request, qs):
+    """Saring barang ke lokasi user (superadmin lihat semua)."""
+    if not request.user.is_superuser:
+        qs = qs.filter(location=request.user.location)
+    return qs
+
+
+def _scope_movements(request, qs):
+    if not request.user.is_superuser:
+        qs = qs.filter(item__location=request.user.location)
+    return qs
+
+
 @login_required
 def item_list(request):
     q = request.GET.get("q", "").strip()
     only_low = request.GET.get("low") == "1"
-    items = Item.objects.select_related("category").order_by("name")
+    items = _scope_items(request, Item.objects.select_related("category", "location")).order_by("name")
     if q:
         items = items.filter(Q(name__icontains=q) | Q(sku__icontains=q))
     if only_low:
@@ -25,7 +38,7 @@ def item_list(request):
 def movement_list(request):
     mtype = request.GET.get("type", "")
     q = request.GET.get("q", "").strip()
-    qs = StockMovement.objects.select_related("item", "user", "supplier").order_by("-created_at")
+    qs = _scope_movements(request, StockMovement.objects.select_related("item", "user", "supplier")).order_by("-created_at")
     if mtype in ("in", "out", "adjustment"):
         qs = qs.filter(type=mtype)
     if q:
@@ -40,17 +53,16 @@ def analytics(request):
     date_to = parse_date(request.GET.get("to", "")) or today
     date_from = parse_date(request.GET.get("from", "")) or (today - timedelta(days=30))
 
-    base = StockMovement.objects.filter(
+    base = _scope_movements(request, StockMovement.objects.filter(
         created_at__date__gte=date_from, created_at__date__lte=date_to
-    )
+    ))
     total_in = base.filter(type="in").aggregate(s=Sum("quantity"))["s"] or 0
     total_out = base.filter(type="out").aggregate(s=Sum("quantity"))["s"] or 0
 
     def top(t):
         rows = (base.filter(type=t).values("item__name")
                 .annotate(total=Sum("quantity")).order_by("-total")[:10])
-        return {"labels": [r["item__name"] for r in rows],
-                "values": [r["total"] for r in rows]}
+        return {"labels": [r["item__name"] for r in rows], "values": [r["total"] for r in rows]}
 
     return render(request, "warehouse/analytics.html", {
         "date_from": date_from, "date_to": date_to,
