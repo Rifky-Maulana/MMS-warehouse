@@ -64,15 +64,16 @@ Starting development server at http://0.0.0.0:8000/
 Buka terminal **kedua** (menu **Terminal → New Terminal** lagi), lalu jalankan tiga perintah ini berurutan:
 
 ```bash
-# 1. Buat berkas migrasi dari model kita (User, Divisi, Audit)
-docker compose exec web python manage.py makemigrations
-
-# 2. Terapkan ke database (membuat tabel-tabelnya)
+# 1. Terapkan migrasi ke database (membuat semua tabel: User, Divisi, Lokasi,
+#    Audit, Kategori, Supplier, Barang, Transaksi Stok). Berkas migrasinya
+#    sudah disertakan di proyek, jadi langsung migrate saja.
 docker compose exec web python manage.py migrate
 
-# 3. Buat akun admin pertama (akan diminta username, email, password)
+# 2. Buat akun admin pertama (akan diminta username, email, password)
 docker compose exec web python manage.py createsuperuser
 ```
+
+> Kalau nanti kamu **mengubah model** (menambah/menghapus field), barulah jalankan `docker compose exec web python manage.py makemigrations` lebih dulu, lalu `migrate` lagi.
 
 ---
 
@@ -107,16 +108,24 @@ Kalau kedua halaman ini terbuka, fondasi Django-mu sudah berjalan. Selamat! 🚀
 
 ```
 gudang-mms/
-├── config/            # pengaturan proyek Django
-├── core/              # aplikasi "inti": User, Divisi, Audit, Dashboard
-├── templates/         # tampilan HTML
+├── config/            # pengaturan proyek Django (settings, urls, wsgi)
+├── core/              # app "inti": User, Divisi, Lokasi, Audit, Dashboard, kontrol akses
+│   ├── models.py      #   User (M2M ke Divisi & Lokasi), Division, Location, AuditLog
+│   ├── access.py      #   aturan hak akses (siapa boleh buka Gudang & lokasi mana)
+│   └── views.py       #   Dashboard + halaman "tidak ada akses"
+├── warehouse/         # app gudang: master data + transaksi stok + analitik
+│   ├── models.py      #   Category, Supplier, Item (stok min, SKU per-lokasi), StockMovement
+│   ├── services.py    #   apply_movement(): logika stok yang aman (atomic + row lock)
+│   ├── forms.py       #   form input transaksi
+│   └── views.py       #   daftar barang, transaksi, input transaksi, analitik
+├── templates/         # tampilan HTML (base, dashboard, login, halaman warehouse)
 ├── Dockerfile         # cara membangun image aplikasi
 ├── docker-compose.yml # definisi layanan web + database
 ├── requirements.txt   # daftar paket Python (dipasang otomatis)
 └── .env               # konfigurasi & rahasia (jangan dibagikan)
 ```
 
-> Di Django, tiap **aplikasi** (folder seperti `core`) adalah satu modul mandiri. Modul gudang nanti menjadi folder `warehouse`, dan divisi lain tinggal menambah folder app baru — persis rencana modular kita.
+> Di Django, tiap **aplikasi** (folder seperti `core` atau `warehouse`) adalah satu modul mandiri. Divisi lain tinggal menambah folder app baru — persis rencana modular kita.
 
 ---
 
@@ -133,6 +142,32 @@ gudang-mms/
 
 ---
 
+## Fitur yang sudah berjalan
+
+Status terkini: aplikasi sudah jauh dari sekadar fondasi. Yang sudah ada:
+
+**Master data & inti**
+- **User** dengan relasi ke banyak **Divisi** dan banyak **Lokasi** (many-to-many).
+- **Lokasi gudang** dan **Divisi** sebagai data acuan.
+- **Catatan Audit** (AuditLog) untuk melacak aksi penting.
+
+**Gudang (`warehouse`)**
+- **Barang (Item):** SKU **unik per lokasi** (kode sama boleh dipakai di lokasi berbeda), kategori, satuan (pcs/box/kg/liter/pack), **stok saat ini**, **stok minimum**, dan status **aktif/nonaktif** (barang bisa disembunyikan tanpa menghapus riwayatnya).
+- **Kategori** & **Supplier** sebagai master data pendukung.
+- **Transaksi Stok (StockMovement):** jenis **Masuk / Keluar / Penyesuaian**, dengan supplier, catatan, dan nomor referensi.
+- **Logika stok yang aman** (`warehouse/services.py`): setiap transaksi berjalan *atomic* dengan **penguncian baris** (`select_for_update`) supaya stok tidak meleset saat dua orang input bersamaan; stok keluar tak boleh melebihi stok yang ada; penyesuaian menyetel stok ke hasil hitung fisik.
+
+**Halaman aplikasi (di luar panel admin)**
+- **Dashboard** — ringkasan: total barang, jumlah stok menipis, total transaksi, daftar stok menipis, dan transaksi terbaru.
+- **Daftar Barang** — pencarian (nama/SKU) + filter lokasi, kategori, "stok menipis", dan tampilkan barang nonaktif.
+- **Daftar Transaksi** — filter jenis/lokasi/kategori + pencarian, dengan paginasi.
+- **Input Transaksi** — form pencatatan stok masuk/keluar/penyesuaian.
+- **Analitik** — total masuk/keluar, barang teratas (in/out), dan tren harian, bisa difilter rentang tanggal, kategori, pencatat, dan lokasi (khusus staf).
+
+**Kontrol akses (`core/access.py`)**
+- Superadmin melihat **semua lokasi**; user biasa hanya melihat data **lokasi yang ditugaskan** padanya.
+- Akses modul Gudang dibatasi berdasarkan divisi (lihat `WAREHOUSE_DIVISION_CODE = "GUDANG"`).
+
 ## Langkah selanjutnya
 
-Setelah fondasi ini berjalan di komputermu, kita lanjut **Tahap 3 — Master Data Gudang**: aplikasi `warehouse` berisi model **kategori, supplier, dan barang** (lengkap dengan **stok minimum**), beserta pengelolaannya lewat panel admin Django. Setelah itu Tahap 4 (transaksi & logika stok) yang akan menghidupkan kartu-kartu di Dashboard.
+Roadmap berikutnya akan menyempurnakan pelaporan, ekspor data, dan pengetatan hak akses per-peran. Detailnya menyusul seiring kebutuhan di lapangan.

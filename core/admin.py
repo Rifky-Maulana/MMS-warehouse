@@ -9,7 +9,7 @@ class UserAdmin(BaseUserAdmin):
     fieldsets = BaseUserAdmin.fieldsets + (
         ("Organisasi", {"fields": ("divisions", "locations")}),
     )
-    filter_horizontal = ("divisions", "locations")
+    filter_horizontal = ("groups", "user_permissions", "divisions", "locations")
     list_display = ("username", "email", "lokasi_list", "divisi_list", "is_staff", "is_active")
     list_filter = BaseUserAdmin.list_filter + ("locations", "divisions")
 
