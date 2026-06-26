@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Dashboard Produksi — Gudang MMS{% endblock %}
+{% block body %}
+<h1 class="text-2xl font-semibold text-brand-ink mb-1">Dashboard Produksi</h1>
+<p class="text-brand-muted mb-6">Selamat datang, {{ request.user.get_full_name|default:request.user.username }}.</p>
+
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+    <div class="bg-white rounded-2xl shadow-soft p-5">
+        <div class="text-sm text-brand-muted">Total barang</div>
+        <div class="text-3xl font-semibold text-brand-ink mt-1">{{ total_items }}</div>
+    </div>
+    <div class="bg-white rounded-2xl shadow-soft p-5">
+        <div class="text-sm text-brand-muted">Stok menipis</div>
+        <div class="text-3xl font-semibold mt-1 {% if low_stock_count %}text-red-500{% else %}text-brand-ink{% endif %}">{{ low_stock_count }}</div>
+    </div>
+    <div class="bg-white rounded-2xl shadow-soft p-5">
+        <div class="text-sm text-brand-muted">Total transaksi</div>
+        <div class="text-3xl font-semibold text-brand-ink mt-1">{{ total_movements }}</div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+    <div class="bg-white rounded-2xl shadow-soft p-5">
+        <h2 class="font-medium text-brand-ink mb-3">Stok menipis</h2>
+        {% if low_stock_items %}
+        <ul class="divide-y divide-slate-100 text-sm">
+            {% for item in low_stock_items %}
+            <li class="flex justify-between py-2">
+                <span class="text-slate-700">{{ item.name }}</span>
+                <span class="text-red-500 font-medium">{{ item.current_stock }} / {{ item.min_stock }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-sm text-brand-muted">Semua stok aman.</p>
+        {% endif %}
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-soft p-5">
+        <h2 class="font-medium text-brand-ink mb-3">Transaksi terbaru</h2>
+        {% if recent_transactions %}
+        <ul class="divide-y divide-slate-100 text-sm">
+            {% for trx in recent_transactions %}
+            <li class="flex justify-between py-2">
+                <span class="text-slate-700">
+                    {% if trx.type == 'in' %}<span class="text-emerald-600 font-medium">Masuk</span>
+                    {% elif trx.type == 'out' %}<span class="text-red-500 font-medium">Keluar</span>
+                    {% else %}<span class="text-amber-600 font-medium">Penyesuaian</span>{% endif %}
+                    {{ trx.quantity }} × {{ trx.item.name }}
+                </span>
+                <span class="text-brand-muted">{{ trx.created_at|date:"d M H:i" }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-sm text-brand-muted">Belum ada transaksi.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

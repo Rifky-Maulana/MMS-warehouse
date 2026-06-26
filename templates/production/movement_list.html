@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Riwayat Transaksi Produksi — Gudang MMS{% endblock %}
+{% block body %}
+<h1 class="text-2xl font-semibold text-brand-ink mb-5">Riwayat transaksi produksi</h1>
+
+<form method="get" class="bg-white rounded-2xl shadow-soft p-4 mb-5 space-y-3 text-sm">
+    <div class="flex flex-wrap gap-2 items-center">
+        <select name="type" class="bg-brand-soft rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-brand/30">
+            <option value="" {% if not type %}selected{% endif %}>Semua jenis</option>
+            <option value="in" {% if type == 'in' %}selected{% endif %}>Masuk</option>
+            <option value="out" {% if type == 'out' %}selected{% endif %}>Keluar</option>
+            <option value="adjustment" {% if type == 'adjustment' %}selected{% endif %}>Penyesuaian</option>
+        </select>
+        <input type="text" name="q" value="{{ q }}" placeholder="Cari barang / referensi..."
+               class="bg-brand-soft rounded-xl px-4 py-2 w-56 outline-none focus:ring-2 focus:ring-brand/30">
+    </div>
+    {% if loc_options.count > 1 %}
+    {% include "partials/_checkbox_filter.html" with label="Lokasi" name="lokasi" options=loc_options selected=sel_locs %}
+    {% endif %}
+    {% include "partials/_checkbox_filter.html" with label="Kategori" name="kategori" options=cat_options selected=sel_cats %}
+    <div class="flex gap-2 pt-1">
+        <button type="submit" class="bg-brand text-white rounded-xl px-4 py-2 font-medium hover:bg-brand-dark transition">Terapkan</button>
+        <a href="{% url 'production:movement_list' %}" class="px-3 py-2 text-brand-muted hover:text-brand-dark">Reset</a>
+    </div>
+</form>
+
+<div class="bg-white rounded-2xl shadow-soft overflow-hidden">
+    <table class="w-full text-sm">
+        <thead>
+            <tr class="text-brand-muted text-left border-b border-slate-100">
+                <th class="px-5 py-3 font-medium">Waktu</th>
+                <th class="px-5 py-3 font-medium">Jenis</th>
+                <th class="px-5 py-3 font-medium">Barang</th>
+                <th class="px-5 py-3 font-medium">Lokasi</th>
+                <th class="px-5 py-3 font-medium text-right">Jumlah</th>
+                <th class="px-5 py-3 font-medium">Pencatat</th>
+                <th class="px-5 py-3 font-medium">Referensi</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for m in page %}
+            <tr class="border-b border-slate-50 hover:bg-brand-soft/60 transition">
+                <td class="px-5 py-3 text-brand-muted whitespace-nowrap">{{ m.created_at|date:"d M Y H:i" }}</td>
+                <td class="px-5 py-3">
+                    {% if m.type == 'in' %}<span class="bg-emerald-50 text-emerald-700 text-xs px-3 py-1 rounded-full">Masuk</span>
+                    {% elif m.type == 'out' %}<span class="bg-red-50 text-red-600 text-xs px-3 py-1 rounded-full">Keluar</span>
+                    {% else %}<span class="bg-amber-50 text-amber-700 text-xs px-3 py-1 rounded-full">Penyesuaian</span>{% endif %}
+                </td>
+                <td class="px-5 py-3 text-slate-700">{{ m.item.name }}</td>
+                <td class="px-5 py-3 text-brand-muted">{{ m.item.location|default:"-" }}</td>
+                <td class="px-5 py-3 text-right font-medium text-slate-700">{{ m.quantity }}</td>
+                <td class="px-5 py-3 text-brand-muted">{{ m.user|default:"-" }}</td>
+                <td class="px-5 py-3 text-brand-muted">{{ m.reference|default:"-" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="7" class="px-5 py-8 text-center text-brand-muted">Tidak ada transaksi yang cocok.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if page.has_other_pages %}
+<div class="flex items-center justify-between mt-4 text-sm text-brand-muted">
+    <span>Halaman {{ page.number }} dari {{ page.paginator.num_pages }} · {{ page.paginator.count }} transaksi</span>
+    <div class="flex gap-2">
+        {% if page.has_previous %}
+        <a href="?page={{ page.previous_page_number }}{% if type %}&type={{ type }}{% endif %}{% if q %}&q={{ q }}{% endif %}{% for l in sel_locs %}&lokasi={{ l }}{% endfor %}{% for c in sel_cats %}&kategori={{ c }}{% endfor %}" class="bg-white rounded-xl px-3 py-2 shadow-soft hover:bg-brand-soft transition">← Sebelumnya</a>
+        {% endif %}
+        {% if page.has_next %}
+        <a href="?page={{ page.next_page_number }}{% if type %}&type={{ type }}{% endif %}{% if q %}&q={{ q }}{% endif %}{% for l in sel_locs %}&lokasi={{ l }}{% endfor %}{% for c in sel_cats %}&kategori={{ c }}{% endfor %}" class="bg-white rounded-xl px-3 py-2 shadow-soft hover:bg-brand-soft transition">Berikutnya →</a>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -23,6 +23,7 @@ INSTALLED_APPS = [
     # Aplikasi (modul) kita:
     "core",
     "warehouse",
+    "production",
 ]
 
 MIDDLEWARE = [

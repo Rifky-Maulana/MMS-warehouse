@@ -1,3 +1,5 @@
+from types import MethodType
+
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
@@ -49,3 +51,25 @@ class AuditLogAdmin(admin.ModelAdmin):
 admin.site.site_header = "Gudang MMS — Panel Admin"
 admin.site.site_title = "Gudang MMS Admin"
 admin.site.index_title = "Modul MMS ERP"
+
+
+# ===== Urutan section di halaman index admin =====
+# Section paling atas dulu; yang tidak terdaftar di bawah, mengikuti urutan default.
+_APP_ORDER = ["warehouse", "production", "auth", "core"]
+
+
+def _ordered_app_list(self, request, app_label=None):
+    app_dict = self._build_app_dict(request, app_label)
+
+    def app_key(app):
+        label = app["app_label"]
+        return (_APP_ORDER.index(label) if label in _APP_ORDER else len(_APP_ORDER),
+                app["name"].lower())
+
+    app_list = sorted(app_dict.values(), key=app_key)
+    for app in app_list:
+        app["models"].sort(key=lambda m: m["name"])
+    return app_list
+
+
+admin.site.get_app_list = MethodType(_ordered_app_list, admin.site)

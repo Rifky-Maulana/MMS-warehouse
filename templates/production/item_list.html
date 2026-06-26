@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Produksi — Daftar Stok{% endblock %}
+{% block body %}
+<div class="flex items-center justify-between mb-5">
+    <h1 class="text-2xl font-semibold text-brand-ink">Daftar stok produksi</h1>
+    <a href="{% url 'production:movement_create' %}" class="bg-brand text-white text-sm rounded-xl px-4 py-2 font-medium hover:bg-brand-dark transition">+ Catat transaksi</a>
+</div>
+
+<form method="get" class="bg-white rounded-2xl shadow-soft p-4 mb-5 space-y-3 text-sm">
+    <div class="flex flex-wrap gap-2 items-center">
+        <input type="text" name="q" value="{{ q }}" placeholder="Cari nama atau SKU..."
+               class="bg-brand-soft rounded-xl px-4 py-2 w-64 outline-none focus:ring-2 focus:ring-brand/30">
+        <label class="inline-flex items-center gap-1.5 bg-brand-soft rounded-xl px-3 py-2 cursor-pointer hover:bg-brand-tint transition">
+            <input type="checkbox" name="low" value="1" class="accent-[#07A4B6]" {% if only_low %}checked{% endif %}> Stok menipis
+        </label>
+        <label class="inline-flex items-center gap-1.5 bg-brand-soft rounded-xl px-3 py-2 cursor-pointer hover:bg-brand-tint transition">
+            <input type="checkbox" name="nonaktif" value="1" class="accent-[#07A4B6]" {% if show_inactive %}checked{% endif %}> Tampilkan nonaktif
+        </label>
+    </div>
+    {% if loc_options.count > 1 %}
+    {% include "partials/_checkbox_filter.html" with label="Lokasi" name="lokasi" options=loc_options selected=sel_locs %}
+    {% endif %}
+    {% include "partials/_checkbox_filter.html" with label="Kategori" name="kategori" options=cat_options selected=sel_cats %}
+    <div class="flex gap-2 pt-1">
+        <button type="submit" class="bg-brand text-white rounded-xl px-4 py-2 font-medium hover:bg-brand-dark transition">Terapkan</button>
+        <a href="{% url 'production:item_list' %}" class="px-3 py-2 text-brand-muted hover:text-brand-dark">Reset</a>
+    </div>
+</form>
+
+<div class="bg-white rounded-2xl shadow-soft overflow-hidden">
+    <table class="w-full text-sm">
+        <thead>
+            <tr class="text-brand-muted text-left border-b border-slate-100">
+                <th class="px-5 py-3 font-medium">SKU</th>
+                <th class="px-5 py-3 font-medium">Nama</th>
+                <th class="px-5 py-3 font-medium">Lokasi</th>
+                <th class="px-5 py-3 font-medium">Kategori</th>
+                <th class="px-5 py-3 font-medium text-right">Stok</th>
+                <th class="px-5 py-3 font-medium text-right">Min</th>
+                <th class="px-5 py-3 font-medium">Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr class="border-b border-slate-50 hover:bg-brand-soft/60 transition {% if not item.is_active %}opacity-50{% endif %}">
+                <td class="px-5 py-3 text-brand-muted">{{ item.sku }}</td>
+                <td class="px-5 py-3 text-slate-700">
+                    {{ item.name }}
+                    {% if not item.is_active %}<span class="ml-1 bg-slate-100 text-slate-500 text-xs px-2 py-0.5 rounded-full">Nonaktif</span>{% endif %}
+                </td>
+                <td class="px-5 py-3 text-brand-muted">{{ item.location|default:"-" }}</td>
+                <td class="px-5 py-3 text-brand-muted">{{ item.category|default:"-" }}</td>
+                <td class="px-5 py-3 text-right {% if item.is_low_stock %}text-red-500 font-medium{% else %}text-slate-700{% endif %}">{{ item.current_stock }}</td>
+                <td class="px-5 py-3 text-right text-brand-muted">{{ item.min_stock }}</td>
+                <td class="px-5 py-3">
+                    {% if item.is_low_stock %}
+                    <span class="bg-red-50 text-red-600 text-xs px-3 py-1 rounded-full">Menipis</span>
+                    {% else %}
+                    <span class="bg-emerald-50 text-emerald-700 text-xs px-3 py-1 rounded-full">Aman</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="7" class="px-5 py-8 text-center text-brand-muted">Tidak ada barang yang cocok.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

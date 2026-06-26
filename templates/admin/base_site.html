@@ -65,5 +65,64 @@ input[type=submit],
 #toolbar input[type=submit] {
     border-radius: 8px;
 }
+
+/* ===== Accordion section di halaman index admin ===== */
+body.dashboard #content-main .module table caption {
+    position: relative;
+}
+body.dashboard #content-main .module table caption .mms-acc-toggle {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 22px;
+    height: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.18);
+    color: var(--header-color, #fff);
+    border: 0;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    line-height: 1;
+    padding: 0;
+    transition: transform .15s ease, background .15s ease;
+}
+body.dashboard #content-main .module table caption .mms-acc-toggle:hover {
+    background: rgba(255, 255, 255, 0.32);
+}
+body.dashboard #content-main .module table.mms-collapsed caption .mms-acc-toggle {
+    transform: translateY(-50%) rotate(-90deg);
+}
+body.dashboard #content-main .module table.mms-collapsed tbody {
+    display: none;
+}
 </style>
+{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    if (!document.body.classList.contains('dashboard')) return;
+    document.querySelectorAll('#content-main .module > table').forEach(function (table) {
+        var caption = table.querySelector('caption');
+        if (!caption || caption.querySelector('.mms-acc-toggle')) return;
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'mms-acc-toggle';
+        btn.setAttribute('aria-expanded', 'true');
+        btn.setAttribute('title', 'Lipat / buka section');
+        btn.textContent = '▾';
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var collapsed = table.classList.toggle('mms-collapsed');
+            btn.setAttribute('aria-expanded', String(!collapsed));
+        });
+        caption.appendChild(btn);
+    });
+});
+</script>
 {% endblock %}
