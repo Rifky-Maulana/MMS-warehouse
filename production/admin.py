@@ -1,6 +1,8 @@
 from django import forms
 from django.contrib import admin
 
+from core.audit import AuditedModelAdmin, log_action
+
 from .models import (
     ProductionCategory,
     ProductionItem,
@@ -11,29 +13,35 @@ from .services import apply_production_movement
 
 
 @admin.register(ProductionCategory)
-class ProductionCategoryAdmin(admin.ModelAdmin):
+class ProductionCategoryAdmin(AuditedModelAdmin):
     list_display = ("name",)
     search_fields = ("name",)
 
 
 @admin.register(ProductionSupplier)
-class ProductionSupplierAdmin(admin.ModelAdmin):
+class ProductionSupplierAdmin(AuditedModelAdmin):
     list_display = ("name", "contact")
     search_fields = ("name", "contact")
 
 
 @admin.action(description="Aktifkan barang terpilih")
 def aktifkan(modeladmin, request, queryset):
+    names = list(queryset.values_list("name", flat=True))
     queryset.update(is_active=True)
+    if names:
+        log_action(request, "Aktifkan Barang Produksi", ", ".join(names))
 
 
 @admin.action(description="Nonaktifkan barang terpilih")
 def nonaktifkan(modeladmin, request, queryset):
+    names = list(queryset.values_list("name", flat=True))
     queryset.update(is_active=False)
+    if names:
+        log_action(request, "Nonaktifkan Barang Produksi", ", ".join(names))
 
 
 @admin.register(ProductionItem)
-class ProductionItemAdmin(admin.ModelAdmin):
+class ProductionItemAdmin(AuditedModelAdmin):
     list_display = (
         "sku", "name", "location", "category", "unit",
         "current_stock", "min_stock", "is_active", "stok_menipis",

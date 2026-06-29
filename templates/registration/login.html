@@ -1,9 +1,9 @@
 {% extends "base.html" %}
-{% block title %}Masuk — Gudang MMS{% endblock %}
+{% block title %}Masuk — Merapi Medika Solusindo{% endblock %}
 {% block body %}
 <div class="max-w-sm mx-auto mt-12 bg-white rounded-2xl shadow-soft p-7">
     <h1 class="text-xl font-semibold text-brand-ink mb-1">Masuk</h1>
-    <p class="text-sm text-brand-muted mb-5">Gudang MMS</p>
+    <p class="text-sm text-brand-muted mb-5">Merapi Medika Solusindo</p>
     {% if form.errors %}<p class="text-red-500 text-sm mb-3">Username atau password salah.</p>{% endif %}
     <form method="post" class="space-y-3">
         {% csrf_token %}

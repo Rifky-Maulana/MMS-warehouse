@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}{{ mesin.nama }} — Produksi{% endblock %}
+{% block body %}
+<div class="flex items-start justify-between mb-5 flex-wrap gap-2">
+    <div>
+        <h1 class="text-2xl font-semibold text-brand-ink">{{ mesin.nama }}</h1>
+        <p class="text-brand-muted text-sm mt-1">
+            <span class="bg-brand-tint text-brand-dark text-xs px-2 py-0.5 rounded-full">{{ mesin.get_jenis_display }}</span>
+            <span class="ml-2">Kode: {{ mesin.kode }}</span>
+            {% if mesin.produk %}<span class="ml-2">· {{ mesin.produk }}</span>{% endif %}
+            {% if mesin.target_per_shift %}<span class="ml-2">· Target/shift: {{ mesin.target_per_shift }} {{ mesin.get_satuan_display }}</span>{% endif %}
+        </p>
+    </div>
+</div>
+
+{% if messages %}
+    {% for message in messages %}
+    <div class="bg-emerald-50 text-emerald-700 rounded-xl px-4 py-3 mb-4 text-sm">{{ message }}</div>
+    {% endfor %}
+{% endif %}
+
+{% if form.non_field_errors %}
+<div class="bg-red-50 text-red-600 rounded-xl px-4 py-3 mb-4 text-sm">
+    {% for e in form.non_field_errors %}{{ e }}{% endfor %}
+</div>
+{% endif %}
+
+<!-- ===== Form input ===== -->
+<form method="post" class="bg-white rounded-2xl shadow-soft p-6 mb-6">
+    {% csrf_token %}
+    <h2 class="font-medium text-brand-ink mb-4">Catat produksi</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {% for field in form %}
+        <div{% if field.name == 'remark' %} class="sm:col-span-2 lg:col-span-3"{% endif %}>
+            <label class="block text-sm text-slate-600 mb-1">
+                {{ field.label }}{% if field.field.required %} <span class="text-red-500">*</span>{% endif %}
+            </label>
+            {{ field }}
+            {% if field.help_text %}<p class="text-xs text-brand-muted mt-1">{{ field.help_text }}</p>{% endif %}
+            {% for e in field.errors %}<p class="text-xs text-red-500 mt-1">{{ e }}</p>{% endfor %}
+        </div>
+        {% endfor %}
+    </div>
+    <div class="flex gap-2 pt-5">
+        <button type="submit" class="bg-brand text-white rounded-xl px-5 py-2.5 font-medium hover:bg-brand-dark transition">Simpan catatan</button>
+    </div>
+</form>
+
+<!-- ===== Riwayat mesin ini ===== -->
+<h2 class="font-medium text-brand-ink mb-3">Riwayat — {{ mesin.nama }}</h2>
+<div class="bg-white rounded-2xl shadow-soft overflow-x-auto">
+    <table class="w-full text-sm">
+        <thead>
+            <tr class="text-brand-muted text-left border-b border-slate-100">
+                <th class="px-4 py-3 font-medium">Tanggal</th>
+                <th class="px-4 py-3 font-medium">Shift</th>
+                <th class="px-4 py-3 font-medium">Durasi</th>
+                <th class="px-4 py-3 font-medium text-right">Input</th>
+                <th class="px-4 py-3 font-medium text-right">Output</th>
+                <th class="px-4 py-3 font-medium text-right">Scrap</th>
+                <th class="px-4 py-3 font-medium text-right">Defect</th>
+                <th class="px-4 py-3 font-medium">Detail</th>
+                <th class="px-4 py-3 font-medium">Petugas</th>
+                <th class="px-4 py-3 font-medium">Dicatat</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in page %}
+            <tr class="border-b border-slate-50 hover:bg-brand-soft/60 transition align-top">
+                <td class="px-4 py-3 text-slate-700 whitespace-nowrap">{{ c.tanggal|date:"d M Y" }}</td>
+                <td class="px-4 py-3 text-brand-muted">{{ c.shift }}</td>
+                <td class="px-4 py-3 text-brand-muted whitespace-nowrap">{{ c.durasi_display }}<div class="text-xs text-slate-400">{{ c.jam_mulai|time:"H:i" }}–{{ c.jam_selesai|time:"H:i" }}</div></td>
+                <td class="px-4 py-3 text-right text-slate-700">{{ c.input|default:"-" }}</td>
+                <td class="px-4 py-3 text-right font-medium text-slate-700">{{ c.output|default:"-" }}</td>
+                <td class="px-4 py-3 text-right text-brand-muted">{{ c.scrap|default:"-" }}</td>
+                <td class="px-4 py-3 text-right text-brand-muted">{{ c.defect_ng|default:"-" }}</td>
+                <td class="px-4 py-3 text-brand-muted">
+                    {% for label, value in c.detail_display %}
+                    <div class="text-xs"><span class="text-slate-400">{{ label }}:</span> {{ value|title }}</div>
+                    {% empty %}-{% endfor %}
+                    {% if c.nomor_produksi %}<div class="text-xs"><span class="text-slate-400">No:</span> {{ c.nomor_produksi }}</div>{% endif %}
+                    {% if c.next_proses %}<div class="text-xs"><span class="text-slate-400">Next:</span> {{ c.next_proses }}</div>{% endif %}
+                    {% if c.remark %}<div class="text-xs text-slate-400 italic">{{ c.remark }}</div>{% endif %}
+                </td>
+                <td class="px-4 py-3 text-brand-muted">{{ c.petugas }}</td>
+                <td class="px-4 py-3 text-brand-muted whitespace-nowrap">{{ c.dicatat_oleh|default:"-" }}<div class="text-xs text-slate-400">{{ c.created_at|date:"d M H:i" }}</div></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="10" class="px-4 py-8 text-center text-brand-muted">Belum ada catatan untuk mesin ini.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if page.has_other_pages %}
+<div class="flex items-center justify-between mt-4 text-sm text-brand-muted">
+    <span>Halaman {{ page.number }} dari {{ page.paginator.num_pages }} · {{ page.paginator.count }} catatan</span>
+    <div class="flex gap-2">
+        {% if page.has_previous %}
+        <a href="?page={{ page.previous_page_number }}" class="bg-white rounded-xl px-3 py-2 shadow-soft hover:bg-brand-soft transition">← Sebelumnya</a>
+        {% endif %}
+        {% if page.has_next %}
+        <a href="?page={{ page.next_page_number }}" class="bg-white rounded-xl px-3 py-2 shadow-soft hover:bg-brand-soft transition">Berikutnya →</a>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}

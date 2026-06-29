@@ -1,5 +1,5 @@
 """
-Pengaturan Django — Sistem Kontrol Gudang MMS.
+Pengaturan Django — Sistem Kontrol Merapi Medika Solusindo.
 Nilai sensitif diambil dari environment (.env), bukan ditulis di sini.
 """
 import os
@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     "core",
     "warehouse",
     "production",
+    "mesin",
 ]
 
 MIDDLEWARE = [

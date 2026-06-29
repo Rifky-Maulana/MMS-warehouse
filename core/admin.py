@@ -3,11 +3,12 @@ from types import MethodType
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
+from .audit import AuditedModelAdmin
 from .models import AuditLog, Division, Location, User
 
 
 @admin.register(User)
-class UserAdmin(BaseUserAdmin):
+class UserAdmin(AuditedModelAdmin, BaseUserAdmin):
     fieldsets = BaseUserAdmin.fieldsets + (
         ("Organisasi", {"fields": ("divisions", "locations")}),
     )
@@ -25,13 +26,13 @@ class UserAdmin(BaseUserAdmin):
 
 
 @admin.register(Location)
-class LocationAdmin(admin.ModelAdmin):
+class LocationAdmin(AuditedModelAdmin):
     list_display = ("name", "code")
     search_fields = ("name", "code")
 
 
 @admin.register(Division)
-class DivisionAdmin(admin.ModelAdmin):
+class DivisionAdmin(AuditedModelAdmin):
     list_display = ("name", "code")
     search_fields = ("name", "code")
 
@@ -48,14 +49,14 @@ class AuditLogAdmin(admin.ModelAdmin):
 
 
 # ===== Branding panel admin =====
-admin.site.site_header = "Gudang MMS — Panel Admin"
-admin.site.site_title = "Gudang MMS Admin"
+admin.site.site_header = "Merapi Medika Solusindo — Panel Admin"
+admin.site.site_title = "Merapi Medika Solusindo Admin"
 admin.site.index_title = "Modul MMS ERP"
 
 
 # ===== Urutan section di halaman index admin =====
 # Section paling atas dulu; yang tidak terdaftar di bawah, mengikuti urutan default.
-_APP_ORDER = ["warehouse", "production", "auth", "core"]
+_APP_ORDER = ["warehouse", "production", "mesin", "auth", "core"]
 
 
 def _ordered_app_list(self, request, app_label=None):

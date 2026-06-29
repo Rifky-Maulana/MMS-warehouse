@@ -1,34 +1,42 @@
 from django import forms
 from django.contrib import admin
 
+from core.audit import AuditedModelAdmin, log_action
+
 from .models import Category, Item, StockMovement, Supplier
 from .services import apply_movement
 
 
 @admin.register(Category)
-class CategoryAdmin(admin.ModelAdmin):
+class CategoryAdmin(AuditedModelAdmin):
     list_display = ("name",)
     search_fields = ("name",)
 
 
 @admin.register(Supplier)
-class SupplierAdmin(admin.ModelAdmin):
+class SupplierAdmin(AuditedModelAdmin):
     list_display = ("name", "contact")
     search_fields = ("name", "contact")
 
 
 @admin.action(description="Aktifkan barang terpilih")
 def aktifkan(modeladmin, request, queryset):
+    names = list(queryset.values_list("name", flat=True))
     queryset.update(is_active=True)
+    if names:
+        log_action(request, "Aktifkan Barang", ", ".join(names))
 
 
 @admin.action(description="Nonaktifkan barang terpilih")
 def nonaktifkan(modeladmin, request, queryset):
+    names = list(queryset.values_list("name", flat=True))
     queryset.update(is_active=False)
+    if names:
+        log_action(request, "Nonaktifkan Barang", ", ".join(names))
 
 
 @admin.register(Item)
-class ItemAdmin(admin.ModelAdmin):
+class ItemAdmin(AuditedModelAdmin):
     list_display = (
         "sku", "name", "location", "category", "unit",
         "current_stock", "min_stock", "is_active", "stok_menipis",
