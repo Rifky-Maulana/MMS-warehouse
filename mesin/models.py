@@ -27,7 +27,7 @@ JENIS_DETAIL_FIELDS = {
 
 # Field umum mana yang DITAMPILKAN per jenis (selain field umum wajib).
 JENIS_COMMON_FIELDS = {
-    "MIXING":        {"input": False, "output": True, "scrap": False, "defect_ng": False},
+    "MIXING":        {"input": False, "output": True, "scrap": True,  "defect_ng": False},
     "CRUSHING":      {"input": True,  "output": True, "scrap": True,  "defect_ng": False},
     "INJECTION":     {"input": False, "output": True, "scrap": False, "defect_ng": True},
     "COUNTING":      {"input": False, "output": True, "scrap": False, "defect_ng": True},
@@ -99,6 +99,23 @@ class CatatanProduksi(models.Model):
         total_min = int(td.total_seconds() // 60)
         h, m = divmod(total_min, 60)
         return f"{h}j {m}m"
+
+    @property
+    def mulai_dt(self):
+        """Datetime mulai (tanggal + jam mulai)."""
+        if self.tanggal and self.jam_mulai:
+            return datetime.combine(self.tanggal, self.jam_mulai)
+        return None
+
+    @property
+    def selesai_dt(self):
+        """Datetime selesai; +1 hari bila jam selesai < jam mulai (lewat tengah malam)."""
+        if self.tanggal and self.jam_selesai:
+            end = datetime.combine(self.tanggal, self.jam_selesai)
+            if self.jam_mulai and self.jam_selesai < self.jam_mulai:
+                end += timedelta(days=1)
+            return end
+        return None
 
     def detail_display(self):
         """[(label, nilai), ...] untuk field khusus, sesuai jenis mesinnya."""

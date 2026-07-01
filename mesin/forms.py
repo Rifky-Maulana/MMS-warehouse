@@ -75,6 +75,24 @@ class CatatanProduksiForm(forms.ModelForm):
         for f in self.fields.values():
             f.widget.attrs.setdefault("class", css)
 
+        # Hook auto-hitung scrap: terisi otomatis (input − output) di browser,
+        # tetap bisa diubah operator. Hanya untuk mesin yang punya input & output.
+        if "scrap" in self.fields:
+            self.fields["scrap"].help_text = "Terisi otomatis dari input − output; masih bisa diubah."
+
+            def _tandai(name, extra):
+                w = self.fields[name].widget
+                w.attrs["class"] = (w.attrs.get("class", "") + " " + extra).strip()
+
+            _tandai("scrap", "js-scrap")
+            if "output" in self.fields:
+                _tandai("output", "js-scrap-output")
+            sumber = {"MIXING": ["pp_murni_kg", "bahan_daur_ulang_kg"],
+                      "CRUSHING": ["input"]}.get(jenis, [])
+            for name in sumber:
+                if name in self.fields:
+                    _tandai(name, "js-scrap-input")
+
     def save(self, commit=True):
         obj = super().save(commit=False)
         obj.mesin_kode = self.mesin.kode
